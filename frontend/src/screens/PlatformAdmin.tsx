@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { fetchPlatformStats, patchPlatformSubscription, type PlatformStats } from '../api/platform';
 import { parseApiError } from '../utils/apiErrors';
 import { buildRootOriginUrl } from '../utils/tenant';
