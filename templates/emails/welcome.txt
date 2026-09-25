@@ -1,0 +1,15 @@
+مرحباً {{ owner_name }}!
+
+تم إنشاء مطعم "{{ restaurant_name }}" بنجاح على E-Menu Pro.
+
+فترتك التجريبية: {{ trial_days }} يوماً
+تاريخ الانتهاء: {{ trial_end_ar }}
+
+لوحة التحكم:
+{{ dashboard_url }}
+
+معاينة المنيو:
+{{ menu_url }}
+
+—
+E-Menu Pro

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>مرحباً بك في E-Menu Pro</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f8;font-family:'Segoe UI',Tahoma,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f8;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center;">
+              <h1 style="margin:0;color:#fff;font-size:24px;">🍽️ E-Menu Pro</h1>
+              <p style="margin:8px 0 0;color:#e0e7ff;font-size:14px;">منصة المنيو الذكية</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;color:#18181b;font-size:20px;">مرحباً {{ owner_name }}! 👋</h2>
+              <p style="color:#52525b;line-height:1.7;margin:0 0 16px;">
+                تم إنشاء مطعم <strong>{{ restaurant_name }}</strong> بنجاح على منصة E-Menu Pro.
+                فترتك التجريبية <strong>{{ trial_days }} يوماً</strong> بدأت الآن!
+              </p>
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin:24px 0;">
+                <p style="margin:0 0 8px;color:#64748b;font-size:13px;">📅 تاريخ انتهاء التجربة:</p>
+                <p style="margin:0;color:#18181b;font-size:18px;font-weight:bold;">{{ trial_end_ar }}</p>
+              </div>
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+                <tr>
+                  <td align="center" style="padding:8px;">
+                    <a href="{{ dashboard_url }}" style="display:inline-block;background:#6366f1;color:#fff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:bold;font-size:15px;">لوحة التحكم</a>
+                  </td>
+                  <td align="center" style="padding:8px;">
+                    <a href="{{ menu_url }}" style="display:inline-block;background:#f1f5f9;color:#6366f1;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:bold;font-size:15px;">معاينة المنيو</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="color:#94a3b8;font-size:12px;line-height:1.6;margin:0;text-align:center;">
+                رابط لوحة التحكم: <a href="{{ dashboard_url }}" style="color:#6366f1;">{{ dashboard_url }}</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;color:#94a3b8;font-size:12px;">© E-Menu Pro — جميع الحقوق محفوظة</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
