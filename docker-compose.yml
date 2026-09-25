@@ -82,7 +82,7 @@ services:
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
       - certbot_www:/var/www/certbot:ro
-      - certbot_certs:/etc/letsencrypt:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
       - frontend
