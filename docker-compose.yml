@@ -39,7 +39,8 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-emenu}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-emenu}
       REDIS_URL: redis://redis:6379/0
     volumes:
-      - media_data:/app/media
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     depends_on:
       db:
         condition: service_healthy
@@ -78,6 +79,8 @@ services:
     volumes:
       - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./deploy/nginx/conf.d/active:/etc/nginx/conf.d:ro
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
       - certbot_www:/var/www/certbot:ro
       - certbot_certs:/etc/letsencrypt:ro
     depends_on:
@@ -98,7 +101,8 @@ services:
 
 volumes:
   postgres_data:
-  media_data:
+  static_volume:
+  media_volume:
   certbot_www:
   certbot_certs:
 
