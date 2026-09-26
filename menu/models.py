@@ -150,12 +150,25 @@ class Restaurant(models.Model):
 
 
 class RestaurantTable(models.Model):
+    STATUS_AVAILABLE = 'available'
+    STATUS_OCCUPIED = 'occupied'
+    STATUS_RESERVED = 'reserved'
+    STATUS_CHOICES = [
+        (STATUS_AVAILABLE, 'متاحة'),
+        (STATUS_OCCUPIED, 'مشغولة'),
+        (STATUS_RESERVED, 'محجوزة'),
+    ]
+
     tenant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='tables',
         db_column='tenant_id', db_index=True, verbose_name="المطعm (Tenant)",
     )
-    number = models.CharField("رقم الطاولة", max_length=10)
+    number = models.CharField("رقم الطاولة", max_length=20)
     label = models.CharField("تسمية", max_length=50, blank=True)
+    capacity = models.PositiveIntegerField("السعة (أشخاص)", default=4)
+    status = models.CharField(
+        "حالة الطاولة", max_length=20, choices=STATUS_CHOICES, default=STATUS_AVAILABLE,
+    )
     is_active = models.BooleanField("نشط", default=True)
 
     class Meta:

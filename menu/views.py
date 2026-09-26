@@ -463,10 +463,15 @@ class RestaurantTableViewSet(TenantWriteMixin, viewsets.ModelViewSet):
     serializer_class = RestaurantTableSerializer
     permission_classes = [IsTenantOwner]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['is_active']
+    filterset_fields = ['is_active', 'status']
 
     def get_queryset(self):
         return tenant_scoped_queryset(RestaurantTable, self.request.user).select_related('tenant')
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['tenant'] = get_user_primary_tenant(self.request.user)
+        return ctx
 
     @action(detail=True, methods=['get'], url_path='qr')
     def qr(self, request, pk=None):
@@ -508,7 +513,12 @@ class RestaurantTableViewSet(TenantWriteMixin, viewsets.ModelViewSet):
             num = str(n)
             table, was_created = RestaurantTable.objects.get_or_create(
                 tenant=tenant, number=num,
-                defaults={'label': f'Table {num}', 'is_active': True},
+                defaults={
+                    'label': f'Table {num}',
+                    'is_active': True,
+                    'capacity': 4,
+                    'status': RestaurantTable.STATUS_AVAILABLE,
+                },
             )
             if was_created:
                 created.append(table)

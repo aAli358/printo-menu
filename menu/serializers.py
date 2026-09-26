@@ -260,16 +260,47 @@ class RestaurantBrandingSerializer(serializers.ModelSerializer):
 class RestaurantTableSerializer(serializers.ModelSerializer):
     menu_url = serializers.SerializerMethodField()
     qr_png_url = serializers.SerializerMethodField()
+    table_number = serializers.CharField(source='number', max_length=20)
 
     class Meta:
         model = RestaurantTable
-        fields = ['id', 'number', 'label', 'is_active', 'menu_url', 'qr_png_url']
+        fields = [
+            'id', 'table_number', 'number', 'label', 'capacity', 'status',
+            'is_active', 'menu_url', 'qr_png_url',
+        ]
         read_only_fields = ['id', 'menu_url', 'qr_png_url']
+        extra_kwargs = {
+            'number': {'required': False},
+            'capacity': {'required': False},
+            'status': {'required': False},
+        }
+
+    def validate_table_number(self, value):
+        text = (value or '').strip()
+        if not text:
+            raise serializers.ValidationError('رقم أو اسم الطاولة مطلوب.')
+        return text
+
+    def validate_capacity(self, value):
+        if value is not None and value < 1:
+            raise serializers.ValidationError('السعة يجب أن تكون 1 على الأقل.')
+        return value
+
+    def validate(self, attrs):
+        tenant = self.context.get('tenant')
+        number = attrs.get('number')
+        if number is None and self.instance:
+            number = self.instance.number
+        if tenant and number:
+            qs = RestaurantTable.objects.filter(tenant=tenant, number=number)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({'table_number': 'رقم الطاولة مستخدم مسبقاً لهذا المطعم.'})
+        return attrs
 
     def get_menu_url(self, obj):
-        request = self.context.get('request')
-        url = obj.tenant.get_qr_url(table_id=obj.number)
-        return url
+        return obj.tenant.get_qr_url(table_id=obj.number)
 
     def get_qr_png_url(self, obj):
         request = self.context.get('request')

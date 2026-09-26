@@ -91,13 +91,26 @@ export const fetchLowStockItems = async () => {
   return data;
 };
 
+export type TableStatus = 'available' | 'occupied' | 'reserved';
+
 export interface RestaurantTableRow {
   id: number;
   number: string;
+  table_number?: string;
   label: string;
+  capacity: number;
+  status: TableStatus;
   is_active: boolean;
   menu_url: string;
   qr_png_url: string;
+}
+
+export interface CreateTablePayload {
+  table_number: string;
+  capacity?: number;
+  status?: TableStatus;
+  label?: string;
+  is_active?: boolean;
 }
 
 export const fetchTables = async () => {
@@ -105,8 +118,28 @@ export const fetchTables = async () => {
   return data;
 };
 
-export const createTable = async (number: string, label = '') => {
-  const { data } = await client.post<RestaurantTableRow>('tables/', { number, label, is_active: true });
+export const createTable = async (payload: CreateTablePayload | string, label = '') => {
+  const body: Record<string, unknown> =
+    typeof payload === 'string'
+      ? { table_number: payload, label, is_active: true, capacity: 4, status: 'available' }
+      : {
+          table_number: payload.table_number,
+          label: payload.label ?? '',
+          capacity: payload.capacity ?? 4,
+          status: payload.status ?? 'available',
+          is_active: payload.is_active ?? true,
+        };
+  const { data } = await client.post<RestaurantTableRow>('tables/', body);
+  return data;
+};
+
+export const updateTable = async (
+  id: number,
+  payload: Partial<Pick<RestaurantTableRow, 'capacity' | 'status' | 'is_active' | 'label'>> & {
+    table_number?: string;
+  },
+) => {
+  const { data } = await client.patch<RestaurantTableRow>(`tables/${id}/`, payload);
   return data;
 };
 

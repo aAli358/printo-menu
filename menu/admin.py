@@ -268,8 +268,8 @@ class TableCallAdmin(TenantAdminMixin, ModelAdmin):
 
 @admin.register(RestaurantTable)
 class RestaurantTableAdmin(TenantAdminMixin, ModelAdmin):
-    list_display = ('number', 'tenant', 'label', 'is_active')
-    list_filter = ('tenant', 'is_active')
+    list_display = ('number', 'tenant', 'capacity', 'status', 'label', 'is_active')
+    list_filter = ('tenant', 'is_active', 'status')
 
 
 @admin.register(MenuItemReview)
