@@ -46,6 +46,15 @@ class TenantIsolationTests(TestCase):
         self.assertEqual(MenuItem.objects.filter(tenant=self.rest_a).count(), 0)
         self.assertEqual(Category.objects.filter(tenant=self.rest_b).count(), 1)
 
+    def test_analytics_empty_data_returns_200(self):
+        self.client.force_authenticate(user=self.user_a)
+        for period in ('day', 'week', 'month'):
+            response = self.client.get('/api/v1/analytics/', {'period': period})
+            self.assertEqual(response.status_code, 200, msg=period)
+            self.assertEqual(response.data['order_count'], 0)
+            self.assertEqual(response.data['revenue'], 0.0)
+            self.assertEqual(response.data['best_sellers'], [])
+
     def test_experience_review_requires_tenant_context(self):
         response = self.client.post('/api/v1/experience-reviews/', {'rating': 5, 'comment': 'Great'})
         self.assertEqual(response.status_code, 400)
