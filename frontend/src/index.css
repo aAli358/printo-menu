@@ -75,6 +75,63 @@ textarea::placeholder {
   background-color: #ffffff;
 }
 
+/* White dashboard cards — dark text (fixes light text inherited from dark shell) */
+.dashboard-light-card,
+.bg-white.rounded-2xl,
+form.bg-white {
+  color: #0f172a !important;
+}
+
+.dashboard-light-card h1,
+.dashboard-light-card h2,
+.dashboard-light-card h3,
+.dashboard-light-card h4,
+.dashboard-light-card h5,
+.dashboard-light-card h6,
+.bg-white.rounded-2xl h1,
+.bg-white.rounded-2xl h2,
+.bg-white.rounded-2xl h3,
+.bg-white.rounded-2xl h4,
+.bg-white.rounded-2xl h5,
+.bg-white.rounded-2xl h6,
+form.bg-white h1,
+form.bg-white h2,
+form.bg-white h3 {
+  color: #1e293b !important;
+}
+
+.dashboard-light-card label,
+form.bg-white label {
+  color: #334155 !important;
+}
+
+.dashboard-light-card p,
+.dashboard-light-card span,
+.dashboard-light-card li,
+.bg-white.rounded-2xl p:not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-amber"]):not([class*="text-violet"]):not([class*="text-red"]),
+.bg-white.rounded-2xl li {
+  color: #334155;
+}
+
+.dashboard-light-card .text-gray-500,
+.bg-white.rounded-2xl .text-gray-500 {
+  color: #64748b !important;
+}
+
+.dashboard-light-card input::placeholder,
+.dashboard-light-card textarea::placeholder,
+.bg-white input::placeholder,
+.bg-white textarea::placeholder,
+form.bg-white input::placeholder,
+form.bg-white textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.tenant-dashboard-dark .dashboard-section-title {
+  color: #f1f5f9 !important;
+}
+
 ::selection {
   background-color: var(--color-primary);
   color: white;

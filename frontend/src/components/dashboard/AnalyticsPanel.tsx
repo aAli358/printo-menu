@@ -31,8 +31,8 @@ export const AnalyticsPanel: React.FC = () => {
     fetchAnalytics(period).then(setData).catch((e) => setError(parseApiError(e, 'تعذر تحميل الإحصائيات')));
   }, [period]);
 
-  if (error) return <p className="text-red-600 font-bold p-4">{error}</p>;
-  if (!data) return <p className="text-gray-400 p-8 text-center">جاري التحميل...</p>;
+  if (error) return <p className="text-red-400 font-bold p-4">{error}</p>;
+  if (!data) return <p className="text-slate-400 p-8 text-center">جاري التحميل...</p>;
 
   return (
     <div className="space-y-6">
@@ -55,7 +55,7 @@ export const AnalyticsPanel: React.FC = () => {
           { label: 'طلبات اليوم', value: String(data.orders_today), accent: 'text-amber-600' },
           { label: 'متوسط التحضير', value: data.avg_prep_minutes != null ? `${data.avg_prep_minutes} د` : '—', accent: 'text-violet-600' },
         ].map((c) => (
-          <div key={c.label} className="bg-white rounded-2xl border p-5">
+          <div key={c.label} className="dashboard-light-card bg-white rounded-2xl border border-slate-200 p-5">
             <p className="text-xs text-gray-500 font-bold">{c.label}</p>
             <p className={`text-2xl font-black mt-1 ${c.accent}`}>{c.value}</p>
           </div>
@@ -63,15 +63,15 @@ export const AnalyticsPanel: React.FC = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border p-5">
-          <h3 className="font-black mb-4">المبيعات</h3>
+        <div className="dashboard-light-card bg-white rounded-2xl border border-slate-200 p-5">
+          <h3 className="font-black text-slate-900 mb-4">المبيعات</h3>
           <BarChart
             labels={data.sales_by_day.map((d) => d.date.slice(5))}
             values={data.sales_by_day.map((d) => d.revenue)}
           />
         </div>
-        <div className="bg-white rounded-2xl border p-5">
-          <h3 className="font-black mb-4">أوقات الذروة</h3>
+        <div className="dashboard-light-card bg-white rounded-2xl border border-slate-200 p-5">
+          <h3 className="font-black text-slate-900 mb-4">أوقات الذروة</h3>
           <BarChart
             labels={data.peak_hours.map((h) => h.hour)}
             values={data.peak_hours.map((h) => h.count)}
@@ -81,20 +81,20 @@ export const AnalyticsPanel: React.FC = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border p-5">
-          <h3 className="font-black mb-4">الأكثر مبيعاً</h3>
+        <div className="dashboard-light-card bg-white rounded-2xl border border-slate-200 p-5">
+          <h3 className="font-black text-slate-900 mb-4">الأكثر مبيعاً</h3>
           <ul className="space-y-2">
             {data.best_sellers.map((item, i) => (
               <li key={i} className="flex justify-between text-sm">
-                <span className="font-bold">{item.name}</span>
+                <span className="font-bold text-slate-800">{item.name}</span>
                 <span className="text-gray-500">{item.quantity} × {item.revenue.toLocaleString()}</span>
               </li>
             ))}
             {data.best_sellers.length === 0 && <li className="text-gray-400 text-sm">لا بيانات</li>}
           </ul>
         </div>
-        <div className="bg-white rounded-2xl border p-5">
-          <h3 className="font-black mb-4">
+        <div className="dashboard-light-card bg-white rounded-2xl border border-slate-200 p-5">
+          <h3 className="font-black text-slate-900 mb-4">
             التقييمات {data.avg_rating != null && <span className="text-amber-500">★ {data.avg_rating}</span>}
             <span className="text-xs text-gray-400 font-normal mr-2">({data.review_count})</span>
           </h3>
