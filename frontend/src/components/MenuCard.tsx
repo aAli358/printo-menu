@@ -27,8 +27,9 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onSelect, index = 0, v
   const v = variant === 'list' ? 'horizontal' : variant === 'grid' ? 'grid-2' : variant;
 
   const tap = {
-    whileTap: { scale: 0.97 },
-    transition: { type: 'spring' as const, stiffness: 400, damping: 28 },
+    whileTap: { scale: 0.98 },
+    whileHover: { scale: 1.01, y: -2 },
+    transition: { type: 'spring' as const, stiffness: 420, damping: 28 },
   };
 
   const openItem = () => onSelect(item);
@@ -165,7 +166,7 @@ export const MenuCard: React.FC<MenuCardProps> = ({ item, onSelect, index = 0, v
               })}
             </div>
           )}
-          <p className="product-price-lg mt-auto pt-2">{price}</p>
+          <span className="product-price-badge mt-auto pt-2">{price}</span>
         </div>
       </div>
       <AddButton />

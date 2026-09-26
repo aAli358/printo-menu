@@ -35,9 +35,11 @@ export const CategorySectionHeader: React.FC<CategorySectionHeaderProps> = ({ ca
   }
 
   return (
-    <div className="flex items-center justify-between mb-3 pb-2 border-b border-neutral-200/60 dark:border-white/8">
-      <h2 className="font-display text-lg font-bold text-[var(--color-text)]">{name}</h2>
-      <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded-lg">{count}</span>
+    <div className="flex items-center justify-between mb-4 px-1">
+      <h2 className="font-display text-xl font-bold tracking-tight text-[var(--color-text)]">{name}</h2>
+      <span className="text-[10px] font-black text-primary bg-primary/10 dark:bg-primary/20 px-2.5 py-1 rounded-full border border-primary/15">
+        {count}
+      </span>
     </div>
   );
 };

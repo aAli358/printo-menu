@@ -23,7 +23,7 @@ const gridClass = (card: MenuLayoutConfig['itemCard']) => {
     case 'full-banner':
     case 'zigzag':
     case 'luxury-row': return 'flex flex-col';
-    default: return 'flex flex-col gap-3';
+    default: return 'flex flex-col gap-4';
   }
 };
 
@@ -35,7 +35,7 @@ export const MenuContent: React.FC<MenuContentProps> = ({
   const itemVariant = layout.itemCard;
 
   return (
-    <main className="px-3 py-4 relative z-10 pb-4">
+    <main className="px-3 py-5 relative z-10 pb-6 max-w-[430px] mx-auto w-full">
       {!searchQuery && featuredItems.length > 0 && layout.featured === 'carousel' && (
         <FeaturedCarousel items={featuredItems.slice(0, 6)} onSelect={onSelectItem} />
       )}
