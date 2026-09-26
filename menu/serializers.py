@@ -256,6 +256,35 @@ class RestaurantBrandingSerializer(serializers.ModelSerializer):
             'currency_code', 'primary_color', 'secondary_color', 'font_family', 'theme_mode',
             'menu_theme', 'logo', 'cover_image', 'qr_color', 'access_mode', 'landing_theme',
         ]
+        extra_kwargs = {
+            'name': {'required': False},
+            'name_en': {'required': False},
+            'description': {'required': False},
+            'description_en': {'required': False},
+            'phone': {'required': False, 'allow_blank': True},
+            'whatsapp_number': {'required': False, 'allow_blank': True},
+            'notification_email': {'required': False, 'allow_null': True},
+            'address': {'required': False, 'allow_blank': True},
+            'currency_code': {'required': False},
+            'primary_color': {'required': False},
+            'secondary_color': {'required': False},
+            'font_family': {'required': False},
+            'theme_mode': {'required': False},
+            'menu_theme': {'required': False},
+            'logo': {'required': False, 'allow_null': True},
+            'cover_image': {'required': False, 'allow_null': True},
+            'qr_color': {'required': False},
+            'access_mode': {'required': False},
+            'landing_theme': {'required': False},
+        }
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        if request is not None:
+            for img_field in ('logo', 'cover_image'):
+                if img_field in attrs and not request.FILES.get(img_field):
+                    attrs.pop(img_field, None)
+        return attrs
 
     def validate_notification_email(self, value):
         if value in (None, ''):

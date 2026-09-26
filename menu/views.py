@@ -350,10 +350,16 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         restaurant = self.get_object()
         if not object_belongs_to_user(request.user, restaurant):
             raise PermissionDenied()
-        serializer = RestaurantBrandingSerializer(restaurant, data=request.data, partial=True)
+        serializer = RestaurantBrandingSerializer(
+            restaurant,
+            data=request.data,
+            partial=True,
+            context={'request': request},
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(RestaurantSerializer(restaurant).data)
+        restaurant.refresh_from_db()
+        return Response(RestaurantSerializer(restaurant, context={'request': request}).data)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def download_qrs(self, request, slug=None):
