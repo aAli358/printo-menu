@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Star } from 'lucide-react';
 import { useMenuStore } from '../store/useMenuStore';
 import { t } from '../utils/locale';
 
