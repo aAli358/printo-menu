@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -278,17 +279,20 @@ class RestaurantStaffViewSet(viewsets.ModelViewSet):
             raise PermissionDenied()
         create_ser = RestaurantStaffCreateSerializer(data=request.data)
         create_ser.is_valid(raise_exception=True)
-        user = User.objects.get(username=create_ser.validated_data['username'])
-        if user.id == tenant.owner_id:
-            raise ValidationError({'username': 'Owner already has full access.'})
-        staff, created = RestaurantStaff.objects.get_or_create(
-            tenant=tenant,
-            user=user,
-            defaults={'role': create_ser.validated_data['role']},
-        )
-        if not created:
-            staff.role = create_ser.validated_data['role']
-            staff.save(update_fields=['role'])
+        data = create_ser.validated_data
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=data['username'],
+                password=data['password'],
+                first_name=(data.get('first_name') or '').strip(),
+            )
+            if RestaurantStaff.objects.filter(tenant=tenant, user=user).exists():
+                raise ValidationError({'username': 'هذا المستخدم مرتبط بالفعل بهذا المطعم.'})
+            staff = RestaurantStaff.objects.create(
+                tenant=tenant,
+                user=user,
+                role=data['role'],
+            )
         return Response(
             RestaurantStaffSerializer(staff).data,
             status=status.HTTP_201_CREATED,

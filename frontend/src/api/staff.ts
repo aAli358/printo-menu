@@ -15,8 +15,15 @@ export const fetchStaff = async () => {
   return data;
 };
 
-export const addStaff = async (username: string, role: StaffRole) => {
-  const { data } = await client.post<StaffMember>('staff/', { username, role });
+export interface AddStaffPayload {
+  username: string;
+  password: string;
+  first_name?: string;
+  role: StaffRole;
+}
+
+export const addStaff = async (payload: AddStaffPayload) => {
+  const { data } = await client.post<StaffMember>('staff/', payload);
   return data;
 };
 

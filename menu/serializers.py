@@ -279,10 +279,25 @@ class RestaurantStaffSerializer(serializers.ModelSerializer):
 
 
 class RestaurantStaffCreateSerializer(serializers.Serializer):
-    username = serializers.CharField()
+    username = serializers.CharField(max_length=150)
+    password = serializers.CharField(write_only=True, min_length=6, max_length=128)
+    first_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
     role = serializers.ChoiceField(choices=RestaurantStaff.ROLE_CHOICES)
 
     def validate_username(self, value):
-        if not User.objects.filter(username=value).exists():
-            raise serializers.ValidationError('User not found.')
+        username = value.strip()
+        if not username:
+            raise serializers.ValidationError('اسم المستخدم مطلوب.')
+        if User.objects.filter(username__iexact=username).exists():
+            raise serializers.ValidationError('اسم المستخدم مستخدم مسبقاً.')
+        return username
+
+    def validate_password(self, value):
+        from django.contrib.auth.password_validation import validate_password
+        from django.core.exceptions import ValidationError as DjangoValidationError
+
+        try:
+            validate_password(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(list(exc.messages)) from exc
         return value
