@@ -128,6 +128,31 @@ form.bg-white textarea::placeholder {
   opacity: 1 !important;
 }
 
+/* White-card forms inside dark dashboard — override dark-shell input styling */
+.tenant-dashboard-dark .dashboard-light-card input,
+.tenant-dashboard-dark .dashboard-light-card select,
+.tenant-dashboard-dark .dashboard-light-card textarea,
+.tenant-dashboard-dark form.bg-white input,
+.tenant-dashboard-dark form.bg-white select,
+.tenant-dashboard-dark form.bg-white textarea {
+  color: #0f172a !important;
+  background-color: #ffffff !important;
+}
+
+.tenant-dashboard-dark .dashboard-light-card input::placeholder,
+.tenant-dashboard-dark .dashboard-light-card textarea::placeholder,
+.tenant-dashboard-dark form.bg-white input::placeholder,
+.tenant-dashboard-dark form.bg-white textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.tenant-dashboard-dark .dashboard-light-card select option,
+.tenant-dashboard-dark form.bg-white select option {
+  color: #111827 !important;
+  background-color: #ffffff !important;
+}
+
 .tenant-dashboard-dark .dashboard-section-title {
   color: #f1f5f9 !important;
 }
