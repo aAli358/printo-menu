@@ -7,6 +7,14 @@ from menu.analytics_service import build_tenant_analytics
 from menu.models import Restaurant
 
 
+def resolve_z_report_recipient(restaurant: Restaurant) -> str | None:
+    custom = (restaurant.notification_email or '').strip()
+    if custom:
+        return custom
+    owner_email = (restaurant.owner.email or '').strip()
+    return owner_email or None
+
+
 class Command(BaseCommand):
     help = 'Email daily sales summary (Z-Report style) to restaurant owners'
 
@@ -14,10 +22,10 @@ class Command(BaseCommand):
         today = timezone.now().date()
         sent = 0
         for restaurant in Restaurant.objects.filter(is_active=True).select_related('owner'):
-            owner = restaurant.owner
-            if not owner.email:
+            recipient = resolve_z_report_recipient(restaurant)
+            if not recipient:
                 continue
-            data = build_tenant_analytics(owner, 'day')
+            data = build_tenant_analytics(restaurant.owner, 'day')
             subject = f'[{restaurant.name}] تقرير يوم {today.isoformat()}'
             body = (
                 f'إيرادات اليوم: {data["revenue"]}\n'
@@ -25,6 +33,6 @@ class Command(BaseCommand):
                 f'طلبات مكتملة: {data["completed_count"]}\n'
                 f'— Printo E-Menu'
             )
-            send_mail(subject, body, None, [owner.email], fail_silently=True)
+            send_mail(subject, body, None, [recipient], fail_silently=True)
             sent += 1
         self.stdout.write(self.style.SUCCESS(f'Sent {sent} daily reports'))

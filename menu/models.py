@@ -21,6 +21,13 @@ class Restaurant(models.Model):
     description_en = models.TextField("وصف المطعم (En)", blank=True)
     phone = models.CharField("رقم الهاتف", max_length=20, blank=True)
     whatsapp_number = models.CharField("رقم الواتساب (للطلبات)", max_length=20, blank=True, help_text="Ex: 9647700000000")
+    notification_email = models.EmailField(
+        "بريد التقارير والإشعارات",
+        max_length=254,
+        blank=True,
+        null=True,
+        help_text="Z-Report والتنبيهات؛ إن تُرك فارغاً يُستخدم إيميل المالك.",
+    )
     address = models.TextField("العنوان", blank=True)
     currency_code = models.CharField("رمز العملة", max_length=10, default="د.ع")
 

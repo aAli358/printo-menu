@@ -16,6 +16,7 @@ export interface Restaurant {
   description_en: string;
   phone: string;
   whatsapp_number?: string;
+  notification_email?: string | null;
   address: string;
   currency_code: string;
   primary_color: string;

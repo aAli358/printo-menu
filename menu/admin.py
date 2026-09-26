@@ -76,7 +76,7 @@ class RestaurantAdmin(RestaurantOwnerAdminMixin, ModelAdmin):
             "description": "إدارة حالة الاشتراك — مرئية لمدير المنصة فقط. «دومين مخصص»: مثل menu.alshams.com (بدون https://). فعّل «إخفاء شعار المنصة» لمطاعm Enterprise.",
         }),
         ("بيانات التواصل والعملة", {
-            "fields": (("phone", "whatsapp_number"), "address", "currency_code"),
+            "fields": (("phone", "whatsapp_number"), "notification_email", "address", "currency_code"),
         }),
         ("الهوية البصرية (Branding)", {
             "classes": ["tab"],

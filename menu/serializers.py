@@ -157,7 +157,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
         model = Restaurant
         fields = [
             'id', 'name', 'name_en', 'slug', 'logo', 'cover_image', 'description',
-            'description_en', 'phone', 'whatsapp_number', 'address', 'currency_code',
+            'description_en', 'phone', 'whatsapp_number', 'notification_email', 'address', 'currency_code',
             'primary_color', 'secondary_color', 'access_mode',
             'font_family', 'theme_mode', 'menu_theme', 'qr_code', 'qr_color',
             'subscription_status', 'subscription_plan', 'subscription_expires_at',
@@ -233,10 +233,16 @@ class RestaurantBrandingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant
         fields = [
-            'name', 'name_en', 'description', 'description_en', 'phone', 'whatsapp_number', 'address',
+            'name', 'name_en', 'description', 'description_en', 'phone', 'whatsapp_number',
+            'notification_email', 'address',
             'currency_code', 'primary_color', 'secondary_color', 'font_family', 'theme_mode',
             'menu_theme', 'logo', 'cover_image', 'qr_color', 'access_mode', 'landing_theme',
         ]
+
+    def validate_notification_email(self, value):
+        if value in (None, ''):
+            return None
+        return value
 
 
 class RestaurantTableSerializer(serializers.ModelSerializer):

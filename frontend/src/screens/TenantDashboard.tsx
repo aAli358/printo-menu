@@ -334,6 +334,12 @@ export const TenantDashboard: React.FC = () => {
 
     'w-full mt-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40';
 
+  const contactFieldClass =
+
+    'w-full mt-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40';
+
+  const contactLabelClass = 'text-xs font-bold text-slate-300';
+
   const labelClass = 'text-xs font-bold text-slate-400';
 
 
@@ -460,9 +466,39 @@ export const TenantDashboard: React.FC = () => {
 
           <label className="block">
 
-            <span className={labelClass}>هاتف المطعم</span>
+            <span className={contactLabelClass}>هاتف المطعم</span>
 
-            <input name="phone" defaultValue={restaurant.phone || ''} placeholder="07xxxxxxxx" className={fieldClass} />
+            <input name="phone" defaultValue={restaurant.phone || ''} placeholder="07xxxxxxxx" className={contactFieldClass} />
+
+          </label>
+
+
+
+          <label className="block">
+
+            <span className={contactLabelClass}>بريد استلام التقارير والإشعارات</span>
+
+            <input
+
+              name="notification_email"
+
+              type="email"
+
+              dir="ltr"
+
+              defaultValue={restaurant.notification_email || ''}
+
+              placeholder="reports@your-restaurant.com"
+
+              className={contactFieldClass}
+
+            />
+
+            <p className="text-[10px] text-slate-400 mt-1">
+
+              الإيميل الذي ستصلك عليه تقارير نهاية اليوم (Z-Report) وتنبيهات النظام.
+
+            </p>
 
           </label>
 
