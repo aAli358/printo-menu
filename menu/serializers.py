@@ -47,6 +47,7 @@ class OrderSerializer(serializers.ModelSerializer):
     )
     table = serializers.CharField(required=False, allow_blank=True, write_only=True)
     table_number = serializers.CharField(required=False, allow_blank=True, max_length=50)
+    access_source = serializers.CharField(required=False, allow_blank=True, allow_null=True, default='direct')
 
     class Meta:
         model = Order
@@ -69,6 +70,11 @@ class OrderSerializer(serializers.ModelSerializer):
         if table_alt is not None and str(table_alt).strip():
             table_number = table_alt
         attrs['table_number'] = normalize_order_table_number(table_number)
+        raw_source = attrs.get('access_source')
+        if raw_source in (None, ''):
+            attrs['access_source'] = 'direct'
+        elif raw_source not in ('qr', 'nfc', 'direct'):
+            attrs['access_source'] = 'direct'
         return attrs
 
     def get_whatsapp_link(self, obj):

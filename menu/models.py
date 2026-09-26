@@ -375,7 +375,10 @@ class Order(models.Model):
     table_number = models.CharField("رقم الطاولة", max_length=50, blank=True)
     customer_name = models.CharField("اسم الزبون", max_length=100, blank=True)
     customer_phone = models.CharField("رقم الزبون", max_length=20, blank=True)
-    access_source = models.CharField("المصدر", max_length=10, choices=[('qr', 'QR'), ('nfc', 'NFC')], blank=True)
+    ACCESS_SOURCES = [('qr', 'QR'), ('nfc', 'NFC'), ('direct', 'مباشر')]
+    access_source = models.CharField(
+        "المصدر", max_length=10, choices=ACCESS_SOURCES, blank=True, default='direct',
+    )
     total_amount = models.DecimalField("إجمالي المبلغ", max_digits=10, decimal_places=2, default=0)
     discount_amount = models.DecimalField("قيمة الخصم", max_digits=10, decimal_places=2, default=0)
     coupon_code = models.CharField("كود الكوبون", max_length=50, blank=True)

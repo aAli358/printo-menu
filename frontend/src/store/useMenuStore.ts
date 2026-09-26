@@ -27,13 +27,13 @@ interface MenuState {
   menuThemeId: MenuThemeId;
   language: Lang;
   tableNumber: string | null;
-  accessSource: 'qr' | 'nfc' | null;
+  accessSource: 'qr' | 'nfc' | 'direct' | null;
 
   setRestaurant: (restaurant: Restaurant) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setTableNumber: (table: string | null) => void;
-  setAccessSource: (source: 'qr' | 'nfc' | null) => void;
+  setAccessSource: (source: 'qr' | 'nfc' | 'direct' | null) => void;
   addToCart: (item: CartItem) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, delta: number) => void;

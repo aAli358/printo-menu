@@ -4,6 +4,7 @@ import { X, ShoppingBag, Trash2, Star, ChefHat, Tag } from 'lucide-react';
 import { useMenuStore } from '../store/useMenuStore';
 import client from '../api/client';
 import { parseApiError } from '../utils/apiErrors';
+import { resolveOrderAccessSource } from '../utils/orderAccessSource';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -32,7 +33,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
     try {
       const orderData: Record<string, unknown> = {
         restaurant: restaurant.id,
-        access_source: accessSource,
+        access_source: resolveOrderAccessSource(accessSource),
         items_list: cart.map(item => ({
           id: item.menuItem.id,
           quantity: item.quantity,

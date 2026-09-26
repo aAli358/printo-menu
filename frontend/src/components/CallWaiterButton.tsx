@@ -4,6 +4,7 @@ import { Bell, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useMenuStore } from '../store/useMenuStore';
 import client from '../api/client';
 import { parseApiError } from '../utils/apiErrors';
+import { resolveOrderAccessSource } from '../utils/orderAccessSource';
 
 interface CallWaiterButtonProps {
   hasCart?: boolean;
@@ -26,7 +27,7 @@ export const CallWaiterButton: React.FC<CallWaiterButtonProps> = ({ hasCart = fa
       await client.post('table-calls/', {
         restaurant: restaurant.id,
         table_number: tableNumber || '0',
-        access_source: accessSource,
+        access_source: resolveOrderAccessSource(accessSource),
         call_type: type,
       });
       setSuccess(true);
