@@ -24,15 +24,13 @@ export const StickyMenuNav: React.FC<StickyMenuNavProps> = ({
     <div className="sticky-menu-nav">
       {/* Sticky search */}
       <div className="sticky-search-wrap px-3 pt-3 pb-2">
-        <div className="sticky-search-bar">
-          <div className="search-icon-wrap">
-            <Search size={18} strokeWidth={2.5} />
-          </div>
+        <div className="flex items-center gap-3 h-12 px-4 rounded-2xl bg-white border border-gray-200 shadow-sm">
+          <Search size={18} strokeWidth={2.5} className="text-slate-600 shrink-0" />
           <input
             type="search"
             enterKeyHint="search"
             placeholder={t(language, 'ابحث عن طبقك المفضل...', 'Search your favorite dish...')}
-            className="sticky-search-input"
+            className="flex-1 min-w-0 h-full bg-transparent border-none outline-none text-sm font-semibold text-slate-900 placeholder:text-gray-500"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
           />

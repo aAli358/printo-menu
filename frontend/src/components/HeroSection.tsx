@@ -38,8 +38,14 @@ export const HeroSection: React.FC = () => {
         )}
         <div className="hero-overlay absolute inset-0" />
         <div className="absolute top-[calc(3.5rem+env(safe-area-inset-top))] inset-x-0 px-4 flex justify-between items-start pointer-events-none">
-          <div className={`status-pill ${isOpen ? 'status-open' : 'status-closed'}`}>
-            <span className={`status-dot ${isOpen ? 'pulse' : ''}`} />
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.65rem] font-medium border shadow-sm ${
+              isOpen
+                ? 'text-emerald-950 bg-emerald-100 border-emerald-300'
+                : 'text-red-950 bg-red-100 border-red-300'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isOpen ? 'bg-emerald-700 animate-pulse' : 'bg-red-700'}`} />
             {isOpen ? t(language, 'مفتوح الآن', 'Open Now') : t(language, 'مغلق', 'Closed')}
           </div>
         </div>
