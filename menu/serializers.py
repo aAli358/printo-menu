@@ -45,11 +45,13 @@ class OrderSerializer(serializers.ModelSerializer):
         source='tenant',
         queryset=Restaurant.objects.none(),
     )
+    table = serializers.CharField(required=False, allow_blank=True, write_only=True)
+    table_number = serializers.CharField(required=False, allow_blank=True, max_length=50)
 
     class Meta:
         model = Order
         fields = [
-            'id', 'restaurant', 'table_number', 'customer_name', 'customer_phone',
+            'id', 'restaurant', 'table', 'table_number', 'customer_name', 'customer_phone',
             'access_source', 'total_amount', 'discount_amount', 'coupon_code',
             'status', 'created_at', 'items', 'whatsapp_link',
         ]
@@ -58,6 +60,16 @@ class OrderSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['restaurant'].queryset = _tenant_scoped_restaurant_qs()
+
+    def validate(self, attrs):
+        from .order_constants import normalize_order_table_number
+
+        table_alt = attrs.pop('table', None)
+        table_number = attrs.get('table_number', '')
+        if table_alt is not None and str(table_alt).strip():
+            table_number = table_alt
+        attrs['table_number'] = normalize_order_table_number(table_number)
+        return attrs
 
     def get_whatsapp_link(self, obj):
         if not obj.tenant.whatsapp_number:

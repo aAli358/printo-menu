@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShoppingBag, Trash2, Star, ChefHat, Tag } from 'lucide-react';
 import { useMenuStore } from '../store/useMenuStore';
 import client from '../api/client';
+import { parseApiError } from '../utils/apiErrors';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -15,24 +16,22 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const [inputTable, setInputTable] = useState('');
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [couponCode, setCouponCode] = useState('');
+  const [directOrder, setDirectOrder] = useState(false);
 
   const t = (ar: string, en: string) => language === 'ar' ? ar : en;
 
   const totalAmount = cart.reduce((sum, item) => sum + item.totalPrice, 0);
 
   const handlePlaceOrder = async () => {
-    const finalTable = tableNumber || inputTable;
     if (!restaurant || cart.length === 0) return;
-    if (!finalTable) {
-      alert(t('يرجى إدخال رقم الطاولة', 'Please enter table number'));
-      return;
-    }
+
+    const trimmedTable = (tableNumber || inputTable || '').trim();
+    const useDirect = directOrder || !trimmedTable;
 
     setLoading(true);
     try {
-      const orderData = {
+      const orderData: Record<string, unknown> = {
         restaurant: restaurant.id,
-        table_number: finalTable,
         access_source: accessSource,
         items_list: cart.map(item => ({
           id: item.menuItem.id,
@@ -45,6 +44,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         })),
         ...(couponCode.trim() ? { coupon_code: couponCode.trim() } : {}),
       };
+      if (!useDirect && trimmedTable) {
+        orderData.table_number = trimmedTable;
+      }
 
       const response = await client.post('orders/', orderData);
       
@@ -63,9 +65,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
         onClose();
       }, 3000);
 
-    } catch (err) {
-      console.error(err);
-      alert(t('حدث خطأ أثناء إرسال الطلب', 'Error sending order'));
+    } catch (err: unknown) {
+      const ax = err as { response?: { data?: unknown; status?: number } };
+      console.error('Order submit failed:', ax.response?.status, ax.response?.data ?? err);
+      alert(parseApiError(err, t('حدث خطأ أثناء إرسال الطلب', 'Error sending order')));
     } finally {
       setLoading(false);
     }
@@ -211,23 +214,42 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
-                    {restaurant?.access_mode === 'general' && !tableNumber && (
-                      <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
-                          {t('رقم الطاولة (إلزامي)', 'Table Number (Required)')}
-                        </label>
-                        <div className="relative">
-                          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-primary">
-                            <Star size={20} fill="currentColor" />
-                          </div>
-                          <input 
-                            type="text"
-                            value={inputTable}
-                            onChange={(e) => setInputTable(e.target.value)}
-                            placeholder={t('أدخل رقم طاولتك هنا', 'Enter your table number')}
-                            className="w-full h-18 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-primary rounded-[1.5rem] px-14 font-black text-xl transition-all outline-none dark:text-white shadow-inner"
+                    {!tableNumber && (
+                      <div className="mb-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <label className="flex items-center gap-3 cursor-pointer px-1">
+                          <input
+                            type="checkbox"
+                            checked={directOrder}
+                            onChange={(e) => {
+                              setDirectOrder(e.target.checked);
+                              if (e.target.checked) setInputTable('');
+                            }}
+                            className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
                           />
-                        </div>
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                            {t('طلب مباشر / بدون طاولة (سفري)', 'Direct order / no table (takeaway)')}
+                          </span>
+                        </label>
+                        {!directOrder && (
+                          <div>
+                            <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
+                              {t('رقم الطاولة (اختياري)', 'Table number (optional)')}
+                            </label>
+                            <div className="relative">
+                              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-primary">
+                                <Star size={20} fill="currentColor" />
+                              </div>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={inputTable}
+                                onChange={(e) => setInputTable(e.target.value)}
+                                placeholder={t('مثال: 4', 'e.g. 4')}
+                                className="w-full h-18 bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-primary rounded-[1.5rem] px-14 font-black text-xl text-slate-900 placeholder:text-gray-500 transition-all outline-none dark:text-white shadow-inner"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 

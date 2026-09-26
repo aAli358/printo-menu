@@ -188,9 +188,9 @@ export const TenantDashboard: React.FC = () => {
 
 
 
-  const handleBulkTables = async () => {
+  const handleBulkTables = async (preset?: number) => {
 
-    const count = parseInt(prompt('كم طاولة؟ (1-100)', '10') || '0', 10);
+    const count = preset ?? parseInt(prompt('كم طاولة؟ (1-100)', '10') || '0', 10);
 
     if (!count) return;
 
@@ -198,7 +198,7 @@ export const TenantDashboard: React.FC = () => {
 
       const result = await bulkGenerateTables(count);
 
-      showMsg(`تم إنشاء ${result.created} طاولة جديدة`);
+      showMsg(`تم إنشاء ${result.created} طاولة جديدة (مجموع حتى ${count})`);
 
       load();
 
@@ -606,6 +606,12 @@ export const TenantDashboard: React.FC = () => {
 
               </p>
 
+              <p className="text-indigo-200/60 text-[11px] mt-2 leading-relaxed">
+
+                روابط الطاولات تضيف <code className="text-indigo-100" dir="ltr">?table=4</code> تلقائياً لربط الطلب برقم الطاولة.
+
+              </p>
+
             </div>
 
           )}
@@ -648,9 +654,15 @@ export const TenantDashboard: React.FC = () => {
 
           <div className="flex flex-wrap gap-2">
 
-            <button type="button" onClick={handleBulkTables} className="px-4 py-2.5 rounded-xl text-sm font-black bg-indigo-600 text-white">
+            <button type="button" onClick={() => handleBulkTables()} className="px-4 py-2.5 rounded-xl text-sm font-black bg-indigo-600 text-white">
 
               توليد طاولات (1–N)
+
+            </button>
+
+            <button type="button" onClick={() => handleBulkTables(20)} className="px-4 py-2.5 rounded-xl text-sm font-black bg-emerald-600 text-white hover:bg-emerald-500">
+
+              توليد طاولات 1–20 + QR
 
             </button>
 

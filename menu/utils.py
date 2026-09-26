@@ -5,8 +5,12 @@ def format_order_for_whatsapp(order):
     currency = order.tenant.currency_code
     message = f"*طلب جديد #{order.id}*\n"
     message += f"--------------------------\n"
-    if order.table_number:
+    from .order_constants import DIRECT_ORDER_TABLE_LABEL
+
+    if order.table_number and order.table_number != DIRECT_ORDER_TABLE_LABEL:
         message += f"📍 *رقم الطاولة:* {order.table_number}\n"
+    elif order.table_number:
+        message += f"📍 *نوع الطلب:* {DIRECT_ORDER_TABLE_LABEL}\n"
     if order.customer_name:
         message += f"👤 *الزبون:* {order.customer_name}\n"
 

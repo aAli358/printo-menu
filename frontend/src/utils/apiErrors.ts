@@ -37,5 +37,14 @@ export function parseApiError(err: unknown, fallback: string): string {
   if (typeof d.errors?.detail === 'string') return d.errors.detail;
   if (Array.isArray(d.username) && d.username[0]) return d.username[0];
   if (Array.isArray(d.errors?.username) && d.errors.username[0]) return String(d.errors.username[0]);
+
+  const skip = new Set(['message', 'detail', 'errors']);
+  for (const [key, val] of Object.entries(d)) {
+    if (skip.has(key)) continue;
+    const label = fieldLabels[key] || key;
+    if (Array.isArray(val) && val[0]) return `${label}: ${String(val[0])}`;
+    if (typeof val === 'string') return `${label}: ${val}`;
+  }
+
   return fallback;
 }

@@ -169,6 +169,23 @@ class PromotionDiscountTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['total_amount'], 25.0)
 
+    def test_order_without_table_number_direct_takeaway(self):
+        from menu.order_constants import DIRECT_ORDER_TABLE_LABEL
+        from menu.models import Order
+
+        response = self.client.post(
+            '/api/v1/orders/',
+            {
+                'restaurant': self.restaurant.id,
+                'items_list': [{'id': self.item.id, 'quantity': 1}],
+            },
+            format='json',
+            HTTP_X_TENANT_SLUG=self.restaurant.slug,
+        )
+        self.assertEqual(response.status_code, 201)
+        order = Order.objects.get(pk=response.data['id'])
+        self.assertEqual(order.table_number, DIRECT_ORDER_TABLE_LABEL)
+
     def test_coupon_on_order_create(self):
         Promotion.objects.create(
             tenant=self.restaurant, name='SAVE10', promo_type='coupon',

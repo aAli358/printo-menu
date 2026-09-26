@@ -359,7 +359,7 @@ class Order(models.Model):
         Restaurant, on_delete=models.CASCADE, related_name='orders',
         db_column='tenant_id', db_index=True, verbose_name="المطعm (Tenant)",
     )
-    table_number = models.CharField("رقم الطاولة", max_length=10, blank=True)
+    table_number = models.CharField("رقم الطاولة", max_length=50, blank=True)
     customer_name = models.CharField("اسم الزبون", max_length=100, blank=True)
     customer_phone = models.CharField("رقم الزبون", max_length=20, blank=True)
     access_source = models.CharField("المصدر", max_length=10, choices=[('qr', 'QR'), ('nfc', 'NFC')], blank=True)

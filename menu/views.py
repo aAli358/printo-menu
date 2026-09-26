@@ -121,6 +121,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = serializer.save()
 
         items_data = request.data.get('items_list', [])
+        if not items_data:
+            return Response(
+                {'detail': 'يجب إضافة صنف واحد على الأقل للطلب.', 'items_list': ['This field is required.']},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         total = 0
         message_items = []
 
@@ -195,7 +200,11 @@ class OrderViewSet(viewsets.ModelViewSet):
         whatsapp_link = ""
         if order.tenant.whatsapp_number:
             msg = f"🛍️ *طلب جديد من {order.tenant.name}*\n"
-            msg += f"📍 *رقم الطاولة:* {order.table_number}\n"
+            from .order_constants import DIRECT_ORDER_TABLE_LABEL
+            if order.table_number and order.table_number != DIRECT_ORDER_TABLE_LABEL:
+                msg += f"📍 *رقم الطاولة:* {order.table_number}\n"
+            else:
+                msg += f"📍 *نوع الطلب:* {DIRECT_ORDER_TABLE_LABEL}\n"
             msg += f"🆔 *رقم الطلب:* #{order.id}\n"
             msg += "--------------------------\n"
             msg += "\n".join(message_items)
