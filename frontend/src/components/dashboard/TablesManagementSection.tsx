@@ -11,8 +11,8 @@ const STATUS_META: Record<TableStatus, { label: string; badge: string; next?: Ta
   reserved: { label: 'محجوزة', badge: 'bg-amber-100 text-amber-900 border-amber-200', next: 'available' },
 };
 
-const inputClass =
-  'w-full mt-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-gray-500 focus:ring-2 focus:ring-indigo-500/40';
+const modalFieldClass =
+  'w-full mt-1.5 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-slate-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/40';
 
 interface Props {
   showMsg: (text: string, type?: 'success' | 'error') => void;
@@ -181,9 +181,9 @@ export const TablesManagementSection: React.FC<Props> = ({ showMsg }) => {
 
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-slate-900" dir="rtl">
-            <h4 className="text-xl font-black mb-4">إضافة طاولة جديدة</h4>
-            <form onSubmit={handleCreate} className="space-y-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-slate-900 dashboard-light-card" dir="rtl">
+            <h4 className="text-xl font-black mb-4 text-slate-900">إضافة طاولة جديدة</h4>
+            <form onSubmit={handleCreate} className="space-y-4 bg-white">
               <label className="block">
                 <span className="text-xs font-bold text-slate-600">رقم / اسم الطاولة</span>
                 <input
@@ -191,7 +191,7 @@ export const TablesManagementSection: React.FC<Props> = ({ showMsg }) => {
                   onChange={(e) => setTableNumber(e.target.value)}
                   required
                   placeholder="1 أو T-01 أو VIP 1"
-                  className={inputClass}
+                  className={modalFieldClass}
                 />
               </label>
               <label className="block">
@@ -202,7 +202,7 @@ export const TablesManagementSection: React.FC<Props> = ({ showMsg }) => {
                   max={50}
                   value={capacity}
                   onChange={(e) => setCapacity(parseInt(e.target.value, 10) || 4)}
-                  className={inputClass}
+                  className={modalFieldClass}
                 />
               </label>
               <label className="block">
@@ -210,11 +210,11 @@ export const TablesManagementSection: React.FC<Props> = ({ showMsg }) => {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as TableStatus)}
-                  className={inputClass}
+                  className={modalFieldClass}
                 >
-                  <option value="available">متاحة</option>
-                  <option value="reserved">محجوزة</option>
-                  <option value="occupied">مشغولة</option>
+                  <option value="available" className="text-slate-900 bg-white">متاحة</option>
+                  <option value="reserved" className="text-slate-900 bg-white">محجوزة</option>
+                  <option value="occupied" className="text-slate-900 bg-white">مشغولة</option>
                 </select>
               </label>
               <div className="flex gap-3 pt-2">
