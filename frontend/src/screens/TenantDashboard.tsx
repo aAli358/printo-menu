@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
+import { useNavigate } from 'react-router-dom';
+
 import { useAuthStore } from '../store/useAuthStore';
+
+import { fetchMe } from '../api/auth';
+
+import { defaultTabForRole, tabsForRole } from '../utils/dashboardTabs';
 
 import {
 
@@ -28,6 +34,12 @@ import { ReservationsPanel } from '../components/dashboard/ReservationsPanel';
 
 import { DashboardShell, type DashboardTab } from '../components/dashboard/DashboardShell';
 
+import { LiveOrdersPanel } from '../components/dashboard/LiveOrdersPanel';
+
+import { StaffPanel } from '../components/dashboard/StaffPanel';
+
+import { ReportsPanel } from '../components/dashboard/ReportsPanel';
+
 import { MENU_THEMES } from '../themes';
 
 
@@ -38,9 +50,11 @@ const panelClass = 'rounded-3xl border border-white/10 bg-[#161a22]/90 p-6 md:p-
 
 export const TenantDashboard: React.FC = () => {
 
+  const navigate = useNavigate();
+
   const { user, restaurants, logout } = useAuthStore();
 
-  const [tab, setTab] = useState<DashboardTab>('menu');
+  const [tab, setTab] = useState<DashboardTab>(() => defaultTabForRole(useAuthStore.getState().user?.tenant_role));
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
 
@@ -91,6 +105,36 @@ export const TenantDashboard: React.FC = () => {
 
 
   useEffect(() => { load(); }, [load]);
+
+
+
+  useEffect(() => {
+
+    fetchMe()
+
+      .then((me) => {
+
+        useAuthStore.setState({ user: me.user, restaurants: me.restaurants });
+
+        if (me.user.tenant_role === 'kitchen') navigate('/kitchen', { replace: true });
+
+      })
+
+      .catch(() => {});
+
+  }, [navigate]);
+
+
+
+  useEffect(() => {
+
+    if (user?.tenant_role === 'kitchen') navigate('/kitchen', { replace: true });
+
+    const allowed = tabsForRole(user?.tenant_role);
+
+    if (allowed.length && !allowed.includes(tab)) setTab(defaultTabForRole(user?.tenant_role));
+
+  }, [user?.tenant_role, tab, navigate]);
 
 
 
@@ -314,6 +358,8 @@ export const TenantDashboard: React.FC = () => {
 
       msg={msg}
 
+      tenantRole={user?.tenant_role}
+
     >
 
       {tab === 'menu' && restaurant && (
@@ -324,7 +370,19 @@ export const TenantDashboard: React.FC = () => {
 
 
 
+      {tab === 'orders' && <LiveOrdersPanel />}
+
+
+
       {tab === 'analytics' && <AnalyticsPanel />}
+
+
+
+      {tab === 'reports' && <ReportsPanel />}
+
+
+
+      {tab === 'staff' && <StaffPanel showMsg={showMsg} />}
 
 
 
@@ -375,6 +433,40 @@ export const TenantDashboard: React.FC = () => {
             </label>
 
           </div>
+
+          <label className="block">
+
+            <span className={labelClass}>رقم واتساب لاستلام الطلبات</span>
+
+            <input
+
+              name="whatsapp_number"
+
+              dir="ltr"
+
+              defaultValue={restaurant.whatsapp_number || ''}
+
+              placeholder="9647700000000"
+
+              className={fieldClass}
+
+            />
+
+            <p className="text-[10px] text-slate-500 mt-1">يُنشئ رابط واتساب تلقائياً بعد طلب الزبون من المنيو</p>
+
+          </label>
+
+
+
+          <label className="block">
+
+            <span className={labelClass}>هاتف المطعم</span>
+
+            <input name="phone" defaultValue={restaurant.phone || ''} placeholder="07xxxxxxxx" className={fieldClass} />
+
+          </label>
+
+
 
           <label className="block">
 

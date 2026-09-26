@@ -6,7 +6,7 @@ import {
 
   createCategory, deleteCategory, createMenuItem, updateMenuItem, deleteMenuItem,
 
-  toggleItemStock, reorderCategories, clearRestaurantMenu,
+  toggleItemStock, fetchLowStockItems, reorderCategories, clearRestaurantMenu,
 
   createVariant, deleteVariant, createAddonGroup, deleteAddonGroup,
 
@@ -48,9 +48,15 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
 
   const [clearing, setClearing] = useState(false);
 
+  const [lowStock, setLowStock] = useState<MenuItem[]>([]);
+
 
 
   useEffect(() => { setCategories(restaurant.categories); }, [restaurant.categories]);
+
+  useEffect(() => {
+    fetchLowStockItems().then(setLowStock).catch(() => setLowStock([]));
+  }, [restaurant.categories]);
 
 
 
@@ -213,6 +219,15 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
   return (
 
     <div className="space-y-6">
+
+      {lowStock.length > 0 && (
+        <div className="rounded-2xl border border-amber-300 bg-white px-5 py-4 text-slate-900 shadow-sm">
+          <p className="font-black text-amber-800">⚠️ تنبيه مخزون — {lowStock.length} صنف قريب من النفاد</p>
+          <p className="text-xs text-slate-600 mt-1 truncate">
+            {lowStock.map((i) => i.name).join(' · ')}
+          </p>
+        </div>
+      )}
 
       <div className="grid sm:grid-cols-3 gap-4">
 
@@ -452,17 +467,31 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
 
                       type="button"
 
+                      role="switch"
+
+                      aria-checked={item.is_available}
+
                       onClick={() => toggleItemStock(item.id).then(onReload)}
 
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black ${
+                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
 
-                        item.is_available ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-600/30 text-slate-400'
+                        item.is_available ? 'bg-emerald-500' : 'bg-slate-500'
 
                       }`}
 
+                      title={item.is_available ? 'متوفر' : 'نفذت الكمية'}
+
                     >
 
-                      {item.is_available ? 'متوفر' : 'نفد'}
+                      <span
+
+                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+
+                          item.is_available ? 'start-0.5' : 'start-[calc(100%-1.375rem)]'
+
+                        }`}
+
+                      />
 
                     </button>
 
@@ -539,6 +568,52 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
                 rows={3}
 
               />
+
+              <div className="grid sm:grid-cols-2 gap-3">
+
+                <label className="block">
+
+                  <span className="text-xs font-bold text-slate-400 mb-1.5 block">الكمية في المخزون</span>
+
+                  <input
+
+                    name="stock_quantity"
+
+                    type="number"
+
+                    min={0}
+
+                    defaultValue={editingItem?.stock_quantity ?? ''}
+
+                    placeholder="اتركه فارغاً بدون تتبع"
+
+                    className={inputClass}
+
+                  />
+
+                </label>
+
+                <label className="block">
+
+                  <span className="text-xs font-bold text-slate-400 mb-1.5 block">حد التنبيه (منخفض)</span>
+
+                  <input
+
+                    name="low_stock_threshold"
+
+                    type="number"
+
+                    min={0}
+
+                    defaultValue={editingItem?.low_stock_threshold ?? 5}
+
+                    className={inputClass}
+
+                  />
+
+                </label>
+
+              </div>
 
               <label className="block">
 

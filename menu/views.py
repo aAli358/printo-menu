@@ -5,7 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Avg, Prefetch
+from django.db.models import Avg, F, Prefetch
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
@@ -222,8 +222,15 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='kitchen')
     def kitchen_board(self, request):
+        from .permissions import get_user_primary_tenant
+        from .staff_roles import resolve_user_tenant_role
+
         orders = self._kitchen_queryset(request)
-        serializer = OrderSerializer(orders, many=True)
+        tenant = get_user_primary_tenant(request.user)
+        hide_prices = resolve_user_tenant_role(request.user, tenant) == 'kitchen'
+        serializer = OrderSerializer(
+            orders, many=True, context={'request': request, 'hide_prices': hide_prices},
+        )
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
@@ -246,7 +253,11 @@ class OrderViewSet(viewsets.ModelViewSet):
                 'order_id': order.id,
                 'status': new_status,
             })
-            return Response({'status': f'Order status updated to {new_status}'})
+            from .utils import build_customer_order_status_whatsapp
+            return Response({
+                'status': f'Order status updated to {new_status}',
+                'whatsapp_customer_link': build_customer_order_status_whatsapp(order, new_status),
+            })
         return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -427,6 +438,15 @@ class MenuItemViewSet(TenantWriteMixin, viewsets.ModelViewSet):
         item.is_available = not item.is_available
         item.save()
         return Response({'status': 'Stock toggled', 'is_available': item.is_available})
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='low-stock')
+    def low_stock(self, request):
+        qs = self.get_queryset().filter(
+            stock_quantity__isnull=False,
+            stock_quantity__lte=F('low_stock_threshold'),
+        )
+        serializer = MenuItemSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
 
 
 class RestaurantTableViewSet(TenantWriteMixin, viewsets.ModelViewSet):

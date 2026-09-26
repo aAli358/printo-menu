@@ -38,7 +38,7 @@ export const LoginPage: React.FC = () => {
         const payload = {
           access: data.tokens.access,
           refresh: data.tokens.refresh,
-          user: { ...me.user, is_superuser: me.user.is_superuser },
+          user: me.user,
           restaurants: me.restaurants.length ? me.restaurants : [{
             id: data.restaurant.id,
             name: data.restaurant.name,
@@ -57,7 +57,7 @@ export const LoginPage: React.FC = () => {
         const payload = {
           access: tokens.access,
           refresh: tokens.refresh,
-          user: { ...me.user, is_superuser: me.user.is_superuser },
+          user: me.user,
           restaurants: me.restaurants,
         };
         setSession(payload);

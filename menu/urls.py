@@ -14,6 +14,7 @@ from .feature_views import (
     TenantAnalyticsView, PlatformStatsView, PlatformRestaurantViewSet,
     PromotionViewSet, TableReservationViewSet, WaitlistViewSet,
     MenuItemVariantViewSet, AddonGroupViewSet, CategoryReorderView, MenuItemReorderView,
+    RestaurantStaffViewSet, ReportsExportView,
 )
 
 router = DefaultRouter()
@@ -30,11 +31,13 @@ router.register(r'reservations', TableReservationViewSet)
 router.register(r'waitlist', WaitlistViewSet)
 router.register(r'variants', MenuItemVariantViewSet)
 router.register(r'addon-groups', AddonGroupViewSet)
+router.register(r'staff', RestaurantStaffViewSet, basename='restaurant-staff')
 router.register(r'platform/restaurants', PlatformRestaurantViewSet, basename='platform-restaurants')
 
 urlpatterns = [
     path('health/', HealthView.as_view(), name='health'),
     path('analytics/', TenantAnalyticsView.as_view(), name='tenant-analytics'),
+    path('reports/export/', ReportsExportView.as_view(), name='reports-export'),
     path('platform/stats/', PlatformStatsView.as_view(), name='platform-stats'),
     path('categories/reorder/', CategoryReorderView.as_view(), name='categories-reorder'),
     path('items/reorder/', MenuItemReorderView.as_view(), name='items-reorder'),

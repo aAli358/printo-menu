@@ -1,11 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type TenantRole = 'owner' | 'waiter' | 'kitchen' | 'cashier';
+
 export interface AuthUser {
   id: number;
   username: string;
   email: string;
   is_superuser?: boolean;
+  tenant_role?: TenantRole | null;
 }
 
 export interface AuthRestaurant {

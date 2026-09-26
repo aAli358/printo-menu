@@ -42,7 +42,10 @@ export const fetchPendingTableCalls = async () => {
 };
 
 export const updateOrderStatus = async (orderId: number, status: string) => {
-  const { data } = await client.post(`orders/${orderId}/update_status/`, { status });
+  const { data } = await client.post<{
+    status: string;
+    whatsapp_customer_link?: string | null;
+  }>(`orders/${orderId}/update_status/`, { status });
   return data;
 };
 

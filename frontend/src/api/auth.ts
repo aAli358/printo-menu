@@ -84,7 +84,13 @@ export const register = async (payload: RegisterPayload) => {
 export const fetchMe = async () => {
   const { data } = await client.get('auth/me/');
   return data as {
-    user: { id: number; username: string; email: string; is_superuser: boolean };
+    user: {
+      id: number;
+      username: string;
+      email: string;
+      is_superuser: boolean;
+      tenant_role?: 'owner' | 'waiter' | 'kitchen' | 'cashier' | null;
+    };
     restaurants: Array<{ id: number; name: string; name_en: string; slug: string; logo: string | null; subscription_status: string }>;
   };
 };

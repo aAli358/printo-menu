@@ -8,15 +8,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from django.contrib.auth import get_user_model
+
 from .models import (
     Promotion, TableReservation, WaitlistEntry,
-    MenuItemVariant, AddonGroup, Addon, Category, MenuItem, Restaurant,
+    MenuItemVariant, AddonGroup, Addon, Category, MenuItem, Restaurant, RestaurantStaff,
 )
+
+User = get_user_model()
 from .feature_serializers import (
     PromotionSerializer, TableReservationSerializer, WaitlistEntrySerializer,
     MenuItemVariantWriteSerializer, AddonGroupWriteSerializer,
     ReorderSerializer, PlatformRestaurantSerializer, PlatformSubscriptionPatchSerializer,
 )
+from .serializers import RestaurantStaffSerializer, RestaurantStaffCreateSerializer
+from .report_export import analytics_export_response
+from .permissions import get_user_primary_tenant
 from .analytics_service import build_tenant_analytics, build_platform_analytics
 from .managers import tenant_scoped_queryset
 from .permissions import (
@@ -241,3 +248,61 @@ class MenuItemReorderView(APIView):
             item.order = int(row.get('order', 0))
             item.save(update_fields=['order'])
         return Response({'status': 'ok'})
+
+
+class IsPrimaryTenantOwner(BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser:
+            return True
+        tenant = get_user_primary_tenant(request.user)
+        return bool(tenant and tenant.owner_id == request.user.id)
+
+
+class RestaurantStaffViewSet(viewsets.ModelViewSet):
+    """Tenant owner manages waiter / kitchen / cashier staff."""
+    serializer_class = RestaurantStaffSerializer
+    permission_classes = [IsAuthenticated, IsPrimaryTenantOwner]
+    http_method_names = ['get', 'post', 'delete', 'head', 'options']
+
+    def get_queryset(self):
+        tenant = get_user_primary_tenant(self.request.user)
+        if not tenant:
+            return RestaurantStaff.objects.none()
+        return RestaurantStaff.objects.filter(tenant=tenant).select_related('user')
+
+    def create(self, request, *args, **kwargs):
+        tenant = get_user_primary_tenant(request.user)
+        if not tenant:
+            raise PermissionDenied()
+        create_ser = RestaurantStaffCreateSerializer(data=request.data)
+        create_ser.is_valid(raise_exception=True)
+        user = User.objects.get(username=create_ser.validated_data['username'])
+        if user.id == tenant.owner_id:
+            raise ValidationError({'username': 'Owner already has full access.'})
+        staff, created = RestaurantStaff.objects.get_or_create(
+            tenant=tenant,
+            user=user,
+            defaults={'role': create_ser.validated_data['role']},
+        )
+        if not created:
+            staff.role = create_ser.validated_data['role']
+            staff.save(update_fields=['role'])
+        return Response(
+            RestaurantStaffSerializer(staff).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class ReportsExportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        period = request.query_params.get('period', 'week')
+        if period not in ('day', 'week', 'month'):
+            period = 'week'
+        fmt = request.query_params.get('format', 'pdf')
+        if fmt not in ('pdf', 'xlsx'):
+            fmt = 'pdf'
+        return analytics_export_response(request.user, fmt, period)

@@ -215,6 +215,11 @@ class MenuItem(models.Model):
     image = models.ImageField("صورة الصنف", upload_to='menu_items/', null=True, blank=True)
     base_price = models.DecimalField("السعر الأساسي", max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     is_available = models.BooleanField("متوفر", default=True)
+    stock_quantity = models.PositiveIntegerField(
+        "الكمية المتوفرة", null=True, blank=True,
+        help_text="اتركه فارغاً إذا لا تريد تتبع المخزون.",
+    )
+    low_stock_threshold = models.PositiveIntegerField("حد تنبيه المخزون", default=5)
     tags = models.JSONField("تاغات (Spicy, Vegan...)", default=list, blank=True)
     order = models.PositiveIntegerField("الترتيب", default=0)
 
@@ -486,6 +491,36 @@ class EnterpriseContact(models.Model):
 
     def __str__(self):
         return f'{self.name} — {self.company or self.email}'
+
+
+class RestaurantStaff(models.Model):
+    """Sub-accounts with role-based access inside a tenant restaurant."""
+
+    ROLE_WAITER = 'waiter'
+    ROLE_KITCHEN = 'kitchen'
+    ROLE_CASHIER = 'cashier'
+    ROLE_CHOICES = [
+        (ROLE_WAITER, 'جرسون'),
+        (ROLE_KITCHEN, 'مطبخ'),
+        (ROLE_CASHIER, 'كاشير'),
+    ]
+
+    tenant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name='staff_members', verbose_name="المطعm",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='restaurant_staff_roles', verbose_name="المستخدم",
+    )
+    role = models.CharField("الدور", max_length=20, choices=ROLE_CHOICES)
+
+    class Meta:
+        verbose_name = "عضو طاقm"
+        verbose_name_plural = "طاقm المطعm"
+        unique_together = ('tenant', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} @ {self.tenant.slug} ({self.role})"
 
 
 class PlatformSettings(models.Model):

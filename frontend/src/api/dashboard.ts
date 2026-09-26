@@ -61,6 +61,8 @@ export interface MenuItemInput {
   description_en?: string;
   base_price: string | number;
   is_available?: boolean;
+  stock_quantity?: number | null;
+  low_stock_threshold?: number;
   tags?: string[];
   order?: number;
 }
@@ -82,6 +84,11 @@ export const deleteMenuItem = async (id: number) => {
 export const toggleItemStock = async (id: number) => {
   const { data } = await client.post(`items/${id}/toggle_stock/`);
   return data as { is_available: boolean };
+};
+
+export const fetchLowStockItems = async () => {
+  const { data } = await client.get<MenuItem[]>('items/low-stock/');
+  return data;
 };
 
 export interface RestaurantTableRow {

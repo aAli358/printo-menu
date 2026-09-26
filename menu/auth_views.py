@@ -90,13 +90,19 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        from .permissions import get_user_primary_tenant
+        from .staff_roles import resolve_user_tenant_role
+
         tenants = get_user_tenants(request.user)
+        primary = get_user_primary_tenant(request.user)
+        role = resolve_user_tenant_role(request.user, primary) if primary else None
         return Response({
             'user': {
                 'id': request.user.id,
                 'username': request.user.username,
                 'email': request.user.email,
                 'is_superuser': request.user.is_superuser,
+                'tenant_role': role,
             },
             'restaurants': [
                 {

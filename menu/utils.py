@@ -24,3 +24,22 @@ def format_order_for_whatsapp(order):
     message += f"شكراً لطلبكم من {order.tenant.name} ✨"
 
     return message
+
+
+def build_customer_order_status_whatsapp(order, new_status: str) -> str | None:
+    """WhatsApp link to notify customer about order status (wa.me customer phone)."""
+    phone = (order.customer_phone or '').strip().replace('+', '').replace(' ', '')
+    if not phone:
+        return None
+    labels = {
+        'preparing': '⏳ طلبك قيد التحضير',
+        'ready': '✅ طلبك جاهز للتسليم',
+        'completed': '🎉 تم تسليم طلبك — شكراً لزيارتكم',
+        'cancelled': '❌ تم إلغاء الطلب',
+    }
+    label = labels.get(new_status, f'تحديث حالة الطلب: {new_status}')
+    msg = f"*{order.tenant.name}*\n{label}\n🆔 رقم الطلب: #{order.id}"
+    if order.table_number:
+        msg += f"\n📍 طاولة: {order.table_number}"
+    import urllib.parse
+    return f"https://wa.me/{phone}?text={urllib.parse.quote(msg)}"

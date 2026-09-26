@@ -82,6 +82,8 @@ export const KitchenDashboard: React.FC = () => {
 
   const { connected: wsConnected } = useKitchenSocket(
     useCallback((msg) => {
+      if (msg.event === 'order.created') playKitchenAlert('new');
+      if (msg.event === 'table_call.created') playKitchenAlert('call');
       if (['order.created', 'order.updated', 'table_call.created', 'table_call.resolved'].includes(msg.event)) {
         poll();
       }
@@ -96,7 +98,10 @@ export const KitchenDashboard: React.FC = () => {
   }, [poll, wsConnected]);
 
   const setStatus = async (orderId: number, status: string) => {
-    await updateOrderStatus(orderId, status);
+    const res = await updateOrderStatus(orderId, status);
+    if (res?.whatsapp_customer_link) {
+      window.open(res.whatsapp_customer_link, '_blank', 'noopener,noreferrer');
+    }
     poll();
   };
 

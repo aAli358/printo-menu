@@ -5,14 +5,28 @@ import { buildRootOriginUrl, isRootDomain } from '../../utils/tenant';
 import {
   getSubscriptionLabel, getSubscriptionBadgeClass, getExpiryWarning,
 } from '../../utils/subscription';
+import { tabsForRole } from '../../utils/dashboardTabs';
+import type { TenantRole } from '../../store/useAuthStore';
 
-export type DashboardTab = 'menu' | 'analytics' | 'promotions' | 'reservations' | 'branding' | 'tables';
+export type DashboardTab =
+  | 'menu'
+  | 'orders'
+  | 'analytics'
+  | 'reports'
+  | 'promotions'
+  | 'reservations'
+  | 'staff'
+  | 'branding'
+  | 'tables';
 
-const NAV: { id: DashboardTab; label: string; icon: string; desc: string }[] = [
+const ALL_NAV: { id: DashboardTab; label: string; icon: string; desc: string }[] = [
   { id: 'menu', label: 'المنيو', icon: '📋', desc: 'أقسام وأصناف' },
+  { id: 'orders', label: 'الطلبات', icon: '🔔', desc: 'حية وتنبيه صوتي' },
   { id: 'analytics', label: 'الإحصائيات', icon: '📊', desc: 'مبيعات وتقييمات' },
+  { id: 'reports', label: 'التقارير', icon: '📥', desc: 'PDF و Excel' },
   { id: 'promotions', label: 'العروض', icon: '🏷️', desc: 'كوبونات وخصومات' },
   { id: 'reservations', label: 'الحجوزات', icon: '📅', desc: 'طاولات وانتظار' },
+  { id: 'staff', label: 'الطاقم', icon: '👥', desc: 'أدوار وصلاحيات' },
   { id: 'branding', label: 'الهوية', icon: '🎨', desc: 'ألوان وثيم' },
   { id: 'tables', label: 'QR والطاولات', icon: '📱', desc: 'باركود وطباعة' },
 ];
@@ -26,6 +40,7 @@ interface Props {
   menuPreviewUrl: string | null;
   onLogout: () => void;
   msg: { text: string; type: 'success' | 'error' } | null;
+  tenantRole?: TenantRole | null;
   children: React.ReactNode;
 }
 
@@ -38,8 +53,12 @@ export const DashboardShell: React.FC<Props> = ({
   menuPreviewUrl,
   onLogout,
   msg,
+  tenantRole,
   children,
 }) => {
+  const allowed = new Set(tabsForRole(tenantRole));
+  const NAV = ALL_NAV.filter((item) => allowed.has(item.id));
+
   const subscriptionWarning = getExpiryWarning(
     restaurant?.subscription_expires_at,
     restaurant?.subscription_status,

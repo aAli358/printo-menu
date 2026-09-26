@@ -15,6 +15,7 @@ export interface Restaurant {
   description: string;
   description_en: string;
   phone: string;
+  whatsapp_number?: string;
   address: string;
   currency_code: string;
   primary_color: string;
@@ -54,6 +55,8 @@ export interface MenuItem {
   image: string | null;
   base_price: string;
   is_available: boolean;
+  stock_quantity?: number | null;
+  low_stock_threshold?: number;
   tags: string[];
   variants: Variant[];
   addon_groups: AddonGroup[];

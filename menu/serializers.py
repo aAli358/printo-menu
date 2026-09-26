@@ -1,8 +1,13 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+
 from .models import (
     Restaurant, Category, MenuItem, MenuItemVariant, AddonGroup, Addon,
     OpeningHours, MenuItemReview, ExperienceReview, TableCall, Order, OrderItem, RestaurantTable,
+    RestaurantStaff,
 )
+
+User = get_user_model()
 from .utils import format_order_for_whatsapp
 from .permissions import get_user_tenants
 from .platform_branding import build_platform_branding
@@ -25,6 +30,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ['id', 'menu_item', 'menu_item_name', 'quantity', 'price', 'modifiers_text']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if self.context.get('hide_prices'):
+            data.pop('price', None)
+        return data
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -54,6 +65,13 @@ class OrderSerializer(serializers.ModelSerializer):
         message = format_order_for_whatsapp(obj)
         encoded_message = urllib.parse.quote(message)
         return f"https://wa.me/{obj.tenant.whatsapp_number}?text={encoded_message}"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if self.context.get('hide_prices'):
+            data.pop('total_amount', None)
+            data.pop('discount_amount', None)
+        return data
 
 
 class OpeningHoursSerializer(serializers.ModelSerializer):
@@ -104,8 +122,8 @@ class MenuItemSerializer(serializers.ModelSerializer):
         model = MenuItem
         fields = [
             'id', 'name', 'name_en', 'description', 'description_en',
-            'image', 'base_price', 'is_available', 'tags', 'variants',
-            'addon_groups', 'average_rating',
+            'image', 'base_price', 'is_available', 'stock_quantity', 'low_stock_threshold',
+            'tags', 'variants', 'addon_groups', 'average_rating',
         ]
 
     def get_average_rating(self, obj):
@@ -187,11 +205,13 @@ class MenuItemWriteSerializer(serializers.ModelSerializer):
         model = MenuItem
         fields = [
             'id', 'category', 'name', 'name_en', 'description', 'description_en',
-            'image', 'base_price', 'is_available', 'tags', 'order',
+            'image', 'base_price', 'is_available', 'stock_quantity', 'low_stock_threshold',
+            'tags', 'order',
         ]
         read_only_fields = ['id']
         extra_kwargs = {
             'is_available': {'required': False},
+            'stock_quantity': {'required': False, 'allow_null': True},
         }
 
     def create(self, validated_data):
@@ -240,3 +260,23 @@ class RestaurantTableSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(
             f'/api/v1/tables/{obj.id}/qr/?ext=png'
         )
+
+
+class RestaurantStaffSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+
+    class Meta:
+        model = RestaurantStaff
+        fields = ['id', 'user_id', 'username', 'role', 'tenant']
+        read_only_fields = ['id', 'user_id', 'username']
+
+
+class RestaurantStaffCreateSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    role = serializers.ChoiceField(choices=RestaurantStaff.ROLE_CHOICES)
+
+    def validate_username(self, value):
+        if not User.objects.filter(username=value).exists():
+            raise serializers.ValidationError('User not found.')
+        return value
