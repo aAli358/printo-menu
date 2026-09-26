@@ -36,6 +36,45 @@ body {
   min-height: 100dvh;
 }
 
+/* Fix input placeholder and text color globally */
+input,
+select,
+textarea {
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+.bg-white input,
+.bg-white select,
+.bg-white textarea {
+  color: #0f172a !important;
+}
+
+/* Dark tenant dashboard — light text on subtle dark fields */
+.tenant-dashboard-dark input,
+.tenant-dashboard-dark select,
+.tenant-dashboard-dark textarea {
+  color: #f1f5f9 !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.tenant-dashboard-dark input::placeholder,
+.tenant-dashboard-dark textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+.tenant-dashboard-dark option {
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
 ::selection {
   background-color: var(--color-primary);
   color: white;

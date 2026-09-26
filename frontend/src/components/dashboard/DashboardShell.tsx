@@ -49,7 +49,7 @@ export const DashboardShell: React.FC<Props> = ({
   const showPlatformAdminLink = Boolean(isSuperuser && isRootDomain());
 
   return (
-    <div className="min-h-screen bg-[#0f1117] text-slate-100" dir="rtl">
+    <div className="tenant-dashboard-dark min-h-screen bg-[#0f1117] text-slate-100" dir="rtl">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-32 -start-32 h-96 w-96 rounded-full bg-indigo-600/20 blur-3xl" />
         <div className="absolute top-1/3 -end-24 h-80 w-80 rounded-full bg-violet-600/15 blur-3xl" />
