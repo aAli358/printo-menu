@@ -12,6 +12,7 @@ load_dotenv(BASE_DIR / '.env')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-e%g@u6=o(c$3@+22dmucutg9zely^mth*duo=1&8p!3)#_+sb0')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+# Leading dot (e.g. .printo-menu.com) allows all tenant subdomains in Django.
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '*').split(',') if h.strip()]
 EMENU_BASE_DOMAIN = os.environ.get('EMENU_BASE_DOMAIN', 'localhost:5173')
 AUTH_HANDOFF_TTL_SECONDS = int(os.environ.get('AUTH_HANDOFF_TTL_SECONDS', '120'))
