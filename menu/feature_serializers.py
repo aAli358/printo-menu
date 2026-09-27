@@ -64,7 +64,7 @@ class MenuItemVariantWriteSerializer(serializers.ModelSerializer):
 class AddonWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Addon
-        fields = ['id', 'name', 'name_en', 'price']
+        fields = ['id', 'group', 'name', 'name_en', 'price']
         read_only_fields = ['id']
 
 

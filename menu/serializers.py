@@ -106,10 +106,22 @@ class AddonSerializer(serializers.ModelSerializer):
 
 class AddonGroupSerializer(serializers.ModelSerializer):
     addons = AddonSerializer(many=True, read_only=True)
+    options = AddonSerializer(source='addons', many=True, read_only=True)
+    min_choices = serializers.IntegerField(source='min_selection', read_only=True)
+    max_choices = serializers.IntegerField(source='max_selection', read_only=True)
+    is_required = serializers.SerializerMethodField()
 
     class Meta:
         model = AddonGroup
-        fields = ['id', 'name', 'name_en', 'min_selection', 'max_selection', 'addons']
+        fields = [
+            'id', 'name', 'name_en',
+            'min_selection', 'max_selection',
+            'min_choices', 'max_choices', 'is_required',
+            'addons', 'options',
+        ]
+
+    def get_is_required(self, obj) -> bool:
+        return (obj.min_selection or 0) > 0
 
 
 class MenuItemVariantSerializer(serializers.ModelSerializer):
@@ -134,6 +146,7 @@ class ExperienceReviewSerializer(serializers.ModelSerializer):
 class MenuItemSerializer(serializers.ModelSerializer):
     variants = MenuItemVariantSerializer(many=True, read_only=True)
     addon_groups = AddonGroupSerializer(many=True, read_only=True)
+    option_groups = AddonGroupSerializer(source='addon_groups', many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
 
     class Meta:
@@ -141,7 +154,7 @@ class MenuItemSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'name_en', 'description', 'description_en',
             'image', 'base_price', 'is_available', 'stock_quantity', 'low_stock_threshold',
-            'tags', 'variants', 'addon_groups', 'average_rating',
+            'tags', 'variants', 'addon_groups', 'option_groups', 'average_rating',
         ]
 
     def get_average_rating(self, obj):

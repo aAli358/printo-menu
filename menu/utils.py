@@ -1,3 +1,14 @@
+def menu_item_max_unit_price(menu_item) -> float:
+    """Upper bound for one unit including largest variant and all paid addons."""
+    base = float(menu_item.base_price)
+    variant_prices = [float(v.price) for v in menu_item.variants.all()]
+    unit = max(variant_prices) if variant_prices else base
+    addon_total = 0.0
+    for group in menu_item.addon_groups.all():
+        addon_total += sum(float(a.price) for a in group.addons.all())
+    return unit + addon_total
+
+
 def format_order_for_whatsapp(order):
     """
     Formats an Order object into a clean, readable text message for WhatsApp.

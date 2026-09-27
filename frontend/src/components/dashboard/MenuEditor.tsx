@@ -1,20 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 
 import type { Restaurant, Category, MenuItem } from '../../types';
 
 import {
-
   createCategory, deleteCategory, createMenuItem, updateMenuItem, deleteMenuItem,
-
-  toggleItemStock, fetchLowStockItems, reorderCategories, clearRestaurantMenu,
-
-  createVariant, deleteVariant, createAddonGroup, deleteAddonGroup,
-
+  toggleItemStock, fetchLowStockItems, reorderCategories, reorderMenuItems, clearRestaurantMenu,
+  exportMenuCsv, importMenuFile, downloadMenuImportTemplate,
 } from '../../api/dashboard';
 
 import { parseApiError } from '../../utils/apiErrors';
-
 import { buildSubdomainUrl } from '../../utils/tenant';
+import { MenuItemOptionsPanel } from './MenuItemOptionsPanel';
 
 
 
@@ -40,9 +37,10 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
 
   const [itemForm, setItemForm] = useState<ItemForm | null>(null);
 
-  const [dragCat, setDragCat] = useState<number | null>(null);
-
   const [clearOpen, setClearOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const [clearConfirm, setClearConfirm] = useState('');
 
@@ -76,36 +74,52 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
 
 
 
-  const handleCatDrop = async (targetId: number) => {
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-    if (dragCat == null || dragCat === targetId) return;
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, type } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
-    const reordered = [...categories];
-
-    const fromIdx = reordered.findIndex((c) => c.id === dragCat);
-
-    const toIdx = reordered.findIndex((c) => c.id === targetId);
-
-    if (fromIdx < 0 || toIdx < 0) return;
-
-    const [moved] = reordered.splice(fromIdx, 1);
-
-    reordered.splice(toIdx, 0, moved);
-
-    setCategories(reordered.map((c, i) => ({ ...c, order: i })));
-
-    try {
-
-      await reorderCategories(reordered.map((c, i) => ({ id: c.id, order: i })));
-
-    } catch (e) {
-
-      showMsg(parseApiError(e, 'تعذر إعادة الترتيب'), 'error');
-
-      onReload();
-
+    if (type === 'CATEGORY') {
+      const reordered = [...categories];
+      const [moved] = reordered.splice(source.index, 1);
+      reordered.splice(destination.index, 0, moved);
+      setCategories(reordered.map((c, i) => ({ ...c, order: i })));
+      try {
+        await reorderCategories(reordered.map((c, i) => ({ id: c.id, order: i })));
+      } catch (e) {
+        showMsg(parseApiError(e, 'تعذر إعادة ترتيب الأقسام'), 'error');
+        onReload();
+      }
+      return;
     }
 
+    if (type.startsWith('ITEM-')) {
+      const catId = Number(type.replace('ITEM-', ''));
+      const catIdx = categories.findIndex((c) => c.id === catId);
+      if (catIdx < 0) return;
+      const cat = categories[catIdx];
+      const items = [...cat.items];
+      const [moved] = items.splice(source.index, 1);
+      items.splice(destination.index, 0, moved);
+      const nextCats = [...categories];
+      nextCats[catIdx] = { ...cat, items };
+      setCategories(nextCats);
+      try {
+        await reorderMenuItems(items.map((it, i) => ({ id: it.id, order: i })));
+      } catch (e) {
+        showMsg(parseApiError(e, 'تعذر إعادة ترتيب الأصناف'), 'error');
+        onReload();
+      }
+    }
   };
 
 
@@ -271,11 +285,34 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
 
               <h2 className="text-xl font-black text-white">محرر المنيو</h2>
 
-              <p className="text-xs text-slate-400 mt-0.5">اسحب الأقسام لإعادة الترتيب</p>
+              <p className="text-xs text-slate-400 mt-0.5">اسحب الأقسام والأصناف لإعادة الترتيب — يُحفظ تلقائياً</p>
 
             </div>
 
             <div className="flex flex-wrap gap-2">
+
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const blob = await exportMenuCsv();
+                    downloadBlob(blob, `${restaurant.slug}-menu.csv`);
+                    showMsg('تم تصدير المنيو');
+                  } catch (e) {
+                    showMsg(parseApiError(e, 'تعذر التصدير'), 'error');
+                  }
+                }}
+                className="px-3 py-2 rounded-xl text-xs font-black border border-emerald-500/40 text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/20"
+              >
+                📥 تصدير المنيو (CSV)
+              </button>
+              <button
+                type="button"
+                onClick={() => { setImportFile(null); setImportOpen(true); }}
+                className="px-3 py-2 rounded-xl text-xs font-black border border-amber-500/40 text-amber-200 bg-amber-500/10 hover:bg-amber-500/20"
+              >
+                📤 استيراد المنيو
+              </button>
 
               <button
 
@@ -349,175 +386,118 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
 
 
 
-          {categories.map((cat: Category) => (
-
-            <div
-
-              key={cat.id}
-
-              draggable
-
-              onDragStart={() => setDragCat(cat.id)}
-
-              onDragOver={(e) => e.preventDefault()}
-
-              onDrop={() => handleCatDrop(cat.id)}
-
-              className="rounded-2xl border border-white/10 bg-[#161a22]/80 overflow-hidden shadow-xl shadow-black/20"
-
-            >
-
-              <div className="flex items-center justify-between px-5 py-4 bg-white/[0.03] border-b border-white/8 cursor-grab active:cursor-grabbing">
-
-                <div>
-
-                  <h3 className="font-black text-white">{cat.name}</h3>
-
-                  <p className="text-[10px] text-slate-500 mt-0.5">{cat.items.length} صنف · ↕ اسحب للترتيب</p>
-
+          <DragDropContext onDragEnd={(r) => void onDragEnd(r)}>
+            <Droppable droppableId="categories" type="CATEGORY">
+              {(catProvided) => (
+                <div ref={catProvided.innerRef} {...catProvided.droppableProps} className="space-y-5">
+                  {categories.map((cat: Category, catIndex) => (
+                    <Draggable key={cat.id} draggableId={`cat-${cat.id}`} index={catIndex}>
+                      {(catDrag) => (
+                        <div
+                          ref={catDrag.innerRef}
+                          {...catDrag.draggableProps}
+                          className="rounded-2xl border border-white/10 bg-[#161a22]/80 overflow-hidden shadow-xl shadow-black/20"
+                        >
+                          <div
+                            {...catDrag.dragHandleProps}
+                            className="flex items-center justify-between px-5 py-4 bg-white/[0.03] border-b border-white/8 cursor-grab active:cursor-grabbing"
+                          >
+                            <div>
+                              <h3 className="font-black text-white">{cat.name}</h3>
+                              <p className="text-[10px] text-slate-500 mt-0.5">{cat.items.length} صنف · ↕ اسحب للترتيب</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setItemForm({ mode: 'new', categoryId: cat.id })}
+                                className="px-3 py-1.5 rounded-lg text-xs font-black bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30"
+                              >
+                                + صنف
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!confirm(`حذف قسم «${cat.name}» وجميع أصنافه؟`)) return;
+                                  try {
+                                    await deleteCategory(cat.id);
+                                    showMsg('تم حذف القسم');
+                                    onReload();
+                                  } catch (e) {
+                                    showMsg(parseApiError(e, 'تعذر الحذف'), 'error');
+                                  }
+                                }}
+                                className="px-3 py-1.5 rounded-lg text-xs font-black text-red-400 hover:bg-red-500/10"
+                              >
+                                حذف
+                              </button>
+                            </div>
+                          </div>
+                          <Droppable droppableId={`items-${cat.id}`} type={`ITEM-${cat.id}`}>
+                            {(itemProvided) => (
+                              <ul ref={itemProvided.innerRef} {...itemProvided.droppableProps} className="divide-y divide-white/5">
+                                {cat.items.length === 0 && (
+                                  <li className="px-5 py-6 text-center text-xs text-slate-500">لا أصناف في هذا القسم</li>
+                                )}
+                                {cat.items.map((item, itemIndex) => (
+                                  <Draggable key={item.id} draggableId={`item-${item.id}`} index={itemIndex}>
+                                    {(itemDrag) => (
+                                      <li
+                                        ref={itemDrag.innerRef}
+                                        {...itemDrag.draggableProps}
+                                        {...itemDrag.dragHandleProps}
+                                        className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors cursor-grab active:cursor-grabbing"
+                                      >
+                                        {item.image ? (
+                                          <img src={item.image} alt="" className="w-14 h-14 rounded-xl object-cover ring-1 ring-white/10" />
+                                        ) : (
+                                          <div className="w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center text-xl">🍴</div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-bold text-white truncate">{item.name}</p>
+                                          <p className="text-xs text-slate-400 mt-0.5">
+                                            {item.base_price} {restaurant.currency_code}
+                                          </p>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          role="switch"
+                                          aria-checked={item.is_available}
+                                          onClick={() => toggleItemStock(item.id).then(onReload)}
+                                          className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+                                            item.is_available ? 'bg-emerald-500' : 'bg-slate-500'
+                                          }`}
+                                          title={item.is_available ? 'متوفر' : 'نفذت الكمية'}
+                                        >
+                                          <span
+                                            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                                              item.is_available ? 'start-0.5' : 'start-[calc(100%-1.375rem)]'
+                                            }`}
+                                          />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => setItemForm({ mode: 'edit', item })}
+                                          className="text-xs font-black text-indigo-300 hover:text-indigo-200"
+                                        >
+                                          تعديل
+                                        </button>
+                                      </li>
+                                    )}
+                                  </Draggable>
+                                ))}
+                                {itemProvided.placeholder}
+                              </ul>
+                            )}
+                          </Droppable>
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {catProvided.placeholder}
                 </div>
-
-                <div className="flex gap-2">
-
-                  <button
-
-                    type="button"
-
-                    onClick={() => setItemForm({ mode: 'new', categoryId: cat.id })}
-
-                    className="px-3 py-1.5 rounded-lg text-xs font-black bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30"
-
-                  >
-
-                    + صنف
-
-                  </button>
-
-                  <button
-
-                    type="button"
-
-                    onClick={async () => {
-
-                      if (!confirm(`حذف قسم «${cat.name}» وجميع أصنافه؟`)) return;
-
-                      try {
-
-                        await deleteCategory(cat.id);
-
-                        showMsg('تم حذف القسم');
-
-                        onReload();
-
-                      } catch (e) {
-
-                        showMsg(parseApiError(e, 'تعذر الحذف'), 'error');
-
-                      }
-
-                    }}
-
-                    className="px-3 py-1.5 rounded-lg text-xs font-black text-red-400 hover:bg-red-500/10"
-
-                  >
-
-                    حذف
-
-                  </button>
-
-                </div>
-
-              </div>
-
-              <ul className="divide-y divide-white/5">
-
-                {cat.items.length === 0 && (
-
-                  <li className="px-5 py-6 text-center text-xs text-slate-500">لا أصناف في هذا القسم</li>
-
-                )}
-
-                {cat.items.map((item) => (
-
-                  <li key={item.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
-
-                    {item.image ? (
-
-                      <img src={item.image} alt="" className="w-14 h-14 rounded-xl object-cover ring-1 ring-white/10" />
-
-                    ) : (
-
-                      <div className="w-14 h-14 rounded-xl bg-white/5 flex items-center justify-center text-xl">🍴</div>
-
-                    )}
-
-                    <div className="flex-1 min-w-0">
-
-                      <p className="font-bold text-white truncate">{item.name}</p>
-
-                      <p className="text-xs text-slate-400 mt-0.5">
-
-                        {item.base_price} {restaurant.currency_code}
-
-                      </p>
-
-                    </div>
-
-                    <button
-
-                      type="button"
-
-                      role="switch"
-
-                      aria-checked={item.is_available}
-
-                      onClick={() => toggleItemStock(item.id).then(onReload)}
-
-                      className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-
-                        item.is_available ? 'bg-emerald-500' : 'bg-slate-500'
-
-                      }`}
-
-                      title={item.is_available ? 'متوفر' : 'نفذت الكمية'}
-
-                    >
-
-                      <span
-
-                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-
-                          item.is_available ? 'start-0.5' : 'start-[calc(100%-1.375rem)]'
-
-                        }`}
-
-                      />
-
-                    </button>
-
-                    <button
-
-                      type="button"
-
-                      onClick={() => setItemForm({ mode: 'edit', item })}
-
-                      className="text-xs font-black text-indigo-300 hover:text-indigo-200"
-
-                    >
-
-                      تعديل
-
-                    </button>
-
-                  </li>
-
-                ))}
-
-              </ul>
-
-            </div>
-
-          ))}
+              )}
+            </Droppable>
+          </DragDropContext>
 
 
 
@@ -624,89 +604,7 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
               </label>
 
               {editingItem && (
-
-                <div className="space-y-3 border-t border-white/10 pt-4 text-sm text-slate-300">
-
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-wider">الأحجام (Variants)</p>
-
-                  {editingItem.variants?.map((v) => (
-
-                    <div key={v.id} className="flex justify-between items-center bg-white/5 rounded-lg px-3 py-2">
-
-                      <span>{v.name} — {v.price}</span>
-
-                      <button type="button" onClick={() => deleteVariant(v.id).then(onReload)} className="text-red-400 text-xs font-bold">حذف</button>
-
-                    </div>
-
-                  ))}
-
-                  <button
-
-                    type="button"
-
-                    className="text-xs text-indigo-300 font-bold"
-
-                    onClick={async () => {
-
-                      const name = prompt('اسم الحجم:');
-
-                      const price = prompt('السعر:');
-
-                      if (!name || !price) return;
-
-                      await createVariant({ menu_item: editingItem.id, name, price });
-
-                      onReload();
-
-                    }}
-
-                  >
-
-                    + حجم
-
-                  </button>
-
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-wider pt-2">الإضافات</p>
-
-                  {editingItem.addon_groups?.map((g) => (
-
-                    <div key={g.id} className="flex justify-between items-center bg-white/5 rounded-lg px-3 py-2">
-
-                      <span>{g.name}</span>
-
-                      <button type="button" onClick={() => deleteAddonGroup(g.id).then(onReload)} className="text-red-400 text-xs font-bold">حذف</button>
-
-                    </div>
-
-                  ))}
-
-                  <button
-
-                    type="button"
-
-                    className="text-xs text-indigo-300 font-bold"
-
-                    onClick={async () => {
-
-                      const name = prompt('اسم مجموعة الإضافات:');
-
-                      if (!name) return;
-
-                      await createAddonGroup({ menu_item: editingItem.id, name, addons: [] });
-
-                      onReload();
-
-                    }}
-
-                  >
-
-                    + مجموعة إضافات
-
-                  </button>
-
-                </div>
-
+                <MenuItemOptionsPanel item={editingItem} onReload={onReload} showMsg={showMsg} />
               )}
 
               <div className="flex flex-wrap gap-2 pt-2">
@@ -879,6 +777,73 @@ export const MenuEditor: React.FC<Props> = ({ restaurant, onReload, showMsg }) =
 
         </div>
 
+      )}
+
+      {importOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#161a22] p-6 space-y-4 shadow-2xl">
+            <h3 className="font-black text-lg text-white">استيراد المنيو (Excel / CSV)</h3>
+            <p className="text-xs text-slate-400">
+              ارفع ملفاً بالأعمدة المعتمدة. للأصناف الجديدة فقط تُنشأ الأحجام ومجموعات الخيارات من الأعمدة المتقدمة.
+            </p>
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xlsm"
+              onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+              className="w-full text-xs text-slate-400 file:me-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-amber-600 file:text-white file:font-bold"
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const blob = await downloadMenuImportTemplate();
+                  downloadBlob(blob, 'menu-import-template.xlsx');
+                } catch (e) {
+                  showMsg(parseApiError(e, 'تعذر تحميل القالب'), 'error');
+                }
+              }}
+              className="text-xs font-bold text-indigo-300 hover:text-indigo-200"
+            >
+              ⬇ تحميل قالب تجريبي (Excel)
+            </button>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={!importFile || importing}
+                onClick={async () => {
+                  if (!importFile) return;
+                  setImporting(true);
+                  try {
+                    const res = await importMenuFile(importFile);
+                    const errCount = res.errors?.length ?? 0;
+                    showMsg(
+                      `تم الاستيراد: ${res.created_items} صنف، ${res.created_categories} قسم${errCount ? ` — ${errCount} تحذير` : ''}`,
+                      errCount ? 'error' : 'success',
+                    );
+                    setImportOpen(false);
+                    setImportFile(null);
+                    onReload();
+                  } catch (e) {
+                    showMsg(parseApiError(e, 'فشل الاستيراد'), 'error');
+                  } finally {
+                    setImporting(false);
+                  }
+                }}
+                className="flex-1 py-3 rounded-xl font-black bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-50"
+              >
+                {importing ? 'جاري الرفع...' : 'رفع واستيراد'}
+              </button>
+              <button
+                type="button"
+                disabled={importing}
+                onClick={() => { setImportOpen(false); setImportFile(null); }}
+                className="flex-1 py-3 rounded-xl font-bold bg-white/5 text-slate-300"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

@@ -200,3 +200,46 @@ export const createAddonGroup = async (payload: {
 export const deleteAddonGroup = async (id: number) => {
   await client.delete(`addon-groups/${id}/`);
 };
+
+export const updateAddonGroup = async (
+  id: number,
+  payload: Partial<{ name: string; name_en: string; min_selection: number; max_selection: number }>,
+) => {
+  const { data } = await client.patch(`addon-groups/${id}/`, payload);
+  return data;
+};
+
+export const createAddon = async (payload: { group: number; name: string; price: string | number; name_en?: string }) => {
+  const { data } = await client.post('addons/', payload);
+  return data;
+};
+
+export const deleteAddon = async (id: number) => {
+  await client.delete(`addons/${id}/`);
+};
+
+export const exportMenuCsv = async () => {
+  const response = await client.get('menu/export/?format=csv', { responseType: 'blob' });
+  return response.data as Blob;
+};
+
+export const exportMenuXlsx = async () => {
+  const response = await client.get('menu/export/?format=xlsx', { responseType: 'blob' });
+  return response.data as Blob;
+};
+
+export const downloadMenuImportTemplate = async () => {
+  const response = await client.get('menu/export/?template=1', { responseType: 'blob' });
+  return response.data as Blob;
+};
+
+export const importMenuFile = async (file: File) => {
+  const fd = new FormData();
+  fd.append('file', file);
+  const { data } = await client.post<{
+    created_categories: number;
+    created_items: number;
+    errors: Array<{ row: number; error: string }>;
+  }>('menu/import/', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  return data;
+};

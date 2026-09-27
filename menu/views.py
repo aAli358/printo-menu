@@ -131,7 +131,9 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         item_ids = [item.get('id') for item in items_data if item.get('id')]
         menu_items_map = {
-            m.id: m for m in MenuItem.objects.filter(id__in=item_ids, tenant=order.tenant)
+            m.id: m for m in MenuItem.objects.filter(id__in=item_ids, tenant=order.tenant).prefetch_related(
+                'variants', 'addon_groups__addons',
+            )
         }
 
         for item in items_data:
@@ -142,7 +144,10 @@ class OrderViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             qty = int(item.get('quantity', 1))
+            from .utils import menu_item_max_unit_price
+
             base = float(menu_item.base_price)
+            max_unit = menu_item_max_unit_price(menu_item)
             raw_price = item.get('price')
             try:
                 price = float(raw_price) if raw_price is not None else base
@@ -150,8 +155,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                 price = base
             if price <= 0:
                 price = base
-            if price > base * 20:
-                price = base
+            if price > max_unit + 0.02:
+                price = min(price, max_unit) if max_unit >= base else base
             modifiers = item.get('modifiers_text', '')
 
             OrderItem.objects.create(
@@ -174,14 +179,19 @@ class OrderViewSet(viewsets.ModelViewSet):
             menu_item = menu_items_map.get(mid)
             if not menu_item:
                 continue
+            from .utils import menu_item_max_unit_price
+
             base = float(menu_item.base_price)
+            max_unit = menu_item_max_unit_price(menu_item)
             raw_price = item.get('price')
             try:
                 line_price = float(raw_price) if raw_price is not None else base
             except (TypeError, ValueError):
                 line_price = base
-            if line_price <= 0 or line_price > base * 20:
+            if line_price <= 0:
                 line_price = base
+            if line_price > max_unit + 0.02:
+                line_price = min(line_price, max_unit) if max_unit >= base else base
             order_lines.append({
                 'menu_item': menu_item,
                 'quantity': int(item.get('quantity', 1)),

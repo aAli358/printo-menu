@@ -19,11 +19,16 @@ from .models import (
 User = get_user_model()
 from .feature_serializers import (
     PromotionSerializer, TableReservationSerializer, WaitlistEntrySerializer,
-    MenuItemVariantWriteSerializer, AddonGroupWriteSerializer,
+    MenuItemVariantWriteSerializer, AddonGroupWriteSerializer, AddonWriteSerializer,
     ReorderSerializer, PlatformRestaurantSerializer, PlatformSubscriptionPatchSerializer,
 )
 from .serializers import RestaurantStaffSerializer, RestaurantStaffCreateSerializer
 from .report_export import analytics_export_response
+from .menu_io import (
+    menu_export_csv, menu_export_xlsx, menu_template_xlsx,
+    import_menu_from_rows, _read_rows_from_upload,
+)
+from django.http import HttpResponse
 from .permissions import get_user_primary_tenant
 from .analytics_service import build_tenant_analytics, build_platform_analytics
 from .managers import tenant_scoped_queryset
@@ -221,6 +226,28 @@ class AddonGroupViewSet(TenantWriteMixin, viewsets.ModelViewSet):
         serializer.save()
 
 
+class AddonViewSet(TenantWriteMixin, viewsets.ModelViewSet):
+    queryset = Addon.objects.all()
+    serializer_class = AddonWriteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Addon.objects.select_related('group__menu_item')
+        if not self.request.user.is_superuser:
+            qs = qs.filter(group__menu_item__tenant__owner=self.request.user)
+        return qs
+
+    def perform_create(self, serializer):
+        group = serializer.validated_data['group']
+        validate_tenant_write_access(self.request.user, group.menu_item.tenant)
+        serializer.save()
+
+    def perform_update(self, serializer):
+        group = serializer.instance.group
+        validate_tenant_write_access(self.request.user, group.menu_item.tenant)
+        serializer.save()
+
+
 class CategoryReorderView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -297,6 +324,56 @@ class RestaurantStaffViewSet(viewsets.ModelViewSet):
             RestaurantStaffSerializer(staff).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class MenuExportView(APIView):
+    permission_classes = [IsAuthenticated, IsPrimaryTenantOwner]
+
+    def get(self, request):
+        tenant = get_user_primary_tenant(request.user)
+        if not tenant:
+            raise PermissionDenied()
+        if request.query_params.get('template') == '1':
+            content = menu_template_xlsx()
+            resp = HttpResponse(
+                content,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            )
+            resp['Content-Disposition'] = 'attachment; filename="menu-import-template.xlsx"'
+            return resp
+        fmt = (request.query_params.get('format') or 'csv').lower()
+        if fmt == 'xlsx':
+            content = menu_export_xlsx(tenant)
+            resp = HttpResponse(
+                content,
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            )
+            resp['Content-Disposition'] = f'attachment; filename="{tenant.slug}-menu.xlsx"'
+            return resp
+        content = menu_export_csv(tenant)
+        resp = HttpResponse(content, content_type='text/csv; charset=utf-8')
+        resp['Content-Disposition'] = f'attachment; filename="{tenant.slug}-menu.csv"'
+        return resp
+
+
+class MenuImportView(APIView):
+    permission_classes = [IsAuthenticated, IsPrimaryTenantOwner]
+
+    def post(self, request):
+        tenant = get_user_primary_tenant(request.user)
+        if not tenant:
+            raise PermissionDenied()
+        uploaded = request.FILES.get('file')
+        if not uploaded:
+            raise ValidationError({'file': 'Upload a CSV or Excel file.'})
+        try:
+            rows = _read_rows_from_upload(uploaded)
+        except Exception as exc:
+            raise ValidationError({'file': f'Could not read file: {exc}'}) from exc
+        if not rows:
+            raise ValidationError({'file': 'No data rows found.'})
+        result = import_menu_from_rows(tenant, rows)
+        return Response(result, status=status.HTTP_200_OK)
 
 
 class ReportsExportView(APIView):

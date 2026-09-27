@@ -13,8 +13,9 @@ from .platform_views import PlatformBrandingPublicView
 from .feature_views import (
     TenantAnalyticsView, PlatformStatsView, PlatformRestaurantViewSet,
     PromotionViewSet, TableReservationViewSet, WaitlistViewSet,
-    MenuItemVariantViewSet, AddonGroupViewSet, CategoryReorderView, MenuItemReorderView,
-    RestaurantStaffViewSet, ReportsExportView,
+    MenuItemVariantViewSet, AddonGroupViewSet, AddonViewSet,
+    CategoryReorderView, MenuItemReorderView,
+    RestaurantStaffViewSet, ReportsExportView, MenuExportView, MenuImportView,
 )
 
 router = DefaultRouter()
@@ -31,6 +32,7 @@ router.register(r'reservations', TableReservationViewSet)
 router.register(r'waitlist', WaitlistViewSet)
 router.register(r'variants', MenuItemVariantViewSet)
 router.register(r'addon-groups', AddonGroupViewSet)
+router.register(r'addons', AddonViewSet)
 router.register(r'staff', RestaurantStaffViewSet, basename='restaurant-staff')
 router.register(r'platform/restaurants', PlatformRestaurantViewSet, basename='platform-restaurants')
 
@@ -41,6 +43,8 @@ urlpatterns = [
     path('platform/stats/', PlatformStatsView.as_view(), name='platform-stats'),
     path('categories/reorder/', CategoryReorderView.as_view(), name='categories-reorder'),
     path('items/reorder/', MenuItemReorderView.as_view(), name='items-reorder'),
+    path('menu/export/', MenuExportView.as_view(), name='menu-export'),
+    path('menu/import/', MenuImportView.as_view(), name='menu-import'),
     path('auth/register/', RegisterView.as_view(), name='auth-register'),
     path('auth/login/', TenantTokenObtainPairView.as_view(), name='auth-login'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='auth-refresh'),
